@@ -85,7 +85,7 @@ final class CompanionManager: ObservableObject {
     private var lastAgentThreadId: String?
 
     /// Latest milestone from a running agent turn ("ran: …", "started thread …"), shown in the panel.
-    @Published private(set) var agentActivityText: String?
+    @Published var agentActivityText: String?   // Agentic OS: AgenticOSHands sets it while a Clicky agent works
 
     /// Files the last agent turn created or changed.
     @Published private(set) var lastAgentArtifacts: [String] = []

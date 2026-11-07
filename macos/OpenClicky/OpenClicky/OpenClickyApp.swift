@@ -46,6 +46,8 @@ final class CompanionAppDelegate: NSObject, NSApplicationDelegate {
     private var sparkleUpdaterController: SPUStandardUpdaterController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Agentic OS (GTD fork): the Clicky agent's hands, the OS window and the services it needs
+        defer { AgenticOS.start(companion: companionManager) }
         // Line-buffer stdout so `open -a OpenClicky --stdout app.log` shows prints as they happen
         // (fully buffered, nothing appears until the app exits).
         setvbuf(stdout, nil, _IOLBF, 0)
@@ -689,11 +691,12 @@ final class CompanionAppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         companionManager.stop()
+        AgenticOS.stop()
     }
 
     /// The Dock icon (while the window is open) or `open -a OpenClicky`: show the window.
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        companionManager.showDictationWindow()
+        AgenticOS.showWindow()     // Agentic OS: opening the program again shows the OS
         return false
     }
 

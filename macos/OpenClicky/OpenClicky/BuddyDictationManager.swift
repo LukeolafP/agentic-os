@@ -435,6 +435,8 @@ final class BuddyDictationManager: NSObject, ObservableObject {
 
     private func buildTranscriptionKeyterms() -> [String] {
         let baseKeyterms = [
+            "Petra",
+            "Agentic OS",
             "OpenClicky",
             "Codex",
             "Claude",

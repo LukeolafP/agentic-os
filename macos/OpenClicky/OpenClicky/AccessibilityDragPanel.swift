@@ -201,7 +201,7 @@ struct AccessibilityDragCardView: View {
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 26, height: 26)
 
-            Text("OpenClicky")
+            Text("Agentic OS")
                 .font(.system(size: 13, weight: .medium))
                 .foregroundColor(.white)
 

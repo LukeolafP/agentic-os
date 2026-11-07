@@ -485,8 +485,8 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = OpenClicky/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "OpenClicky Debug";
-				INFOPLIST_KEY_CFBundleName = OpenClicky;
+				INFOPLIST_KEY_CFBundleDisplayName = "Agentic OS Debug";
+				INFOPLIST_KEY_CFBundleName = "Agentic OS";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSScreenCaptureUsageDescription = "OpenClicky needs screen recording access to see your screen and help you.";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -494,8 +494,8 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = org.openclicky.app.debug;
-				PRODUCT_NAME = OpenClicky;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gettruckdrivers.agentic-os.debug;
+				PRODUCT_NAME = "Agentic OS";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -526,8 +526,8 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = OpenClicky/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = OpenClicky;
-				INFOPLIST_KEY_CFBundleName = OpenClicky;
+				INFOPLIST_KEY_CFBundleDisplayName = "Agentic OS";
+				INFOPLIST_KEY_CFBundleName = "Agentic OS";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSScreenCaptureUsageDescription = "OpenClicky needs screen recording access to see your screen and help you.";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -535,8 +535,8 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = org.openclicky.app;
-				PRODUCT_NAME = OpenClicky;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gettruckdrivers.agentic-os;
+				PRODUCT_NAME = "Agentic OS";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;

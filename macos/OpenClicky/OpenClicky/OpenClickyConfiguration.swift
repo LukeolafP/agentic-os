@@ -17,7 +17,7 @@ struct OpenClickyShellSettings: Codable {
     /// The hosted backend by default (invite accounts and bring-your-own-key both go there); a
     /// self-hosted backend is one line in shell.json (`http://localhost:8787`).
     var backendUrl: String = OpenClickyConfiguration.hostedBackendURL
-    var token: String = ""
+    var token: String = "agentic-os-local"   // Agentic OS: no OpenClicky account; the local backend needs none
     /// Working directory for agent runs (created on demand).
     var workspace: String = NSString(string: "~/OpenClicky").expandingTildeInPath
     var model: String = ""
@@ -146,7 +146,7 @@ extension OpenClickyShellSettings {
 
 enum OpenClickyConfiguration {
     /// Where the app talks to unless shell.json says otherwise.
-    static let hostedBackendURL = "https://api.openclicky.org"
+    static let hostedBackendURL = "http://127.0.0.1:8793"   // Agentic OS: Petra's own backend on this Mac (~/Coding/jarvis/clicky)
     /// Connectors (Composio app connections): the "connect <app> to openclicky?" card, the composio
     /// tile in the HUD, and the Composio tools handed to the agent. Off for 0.8.0; a later release
     /// turns them back on by flipping this.
