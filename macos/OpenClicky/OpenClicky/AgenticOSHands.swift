@@ -212,7 +212,8 @@ nonisolated final class AgenticOSHands: @unchecked Sendable {
         let mouse = CGEvent(source: nil)?.location ?? .zero
         return (0..<Int(count)).map { index in
             let bounds = CGDisplayBounds(ids[index])
-            return ["index": index, "x": bounds.origin.x, "y": bounds.origin.y, "width": bounds.width, "height": bounds.height,
+            // plain Doubles: a CGFloat boxed as Any does not cast to Double, and the crash took the app with it
+            return ["index": index, "x": Double(bounds.origin.x), "y": Double(bounds.origin.y), "width": Double(bounds.width), "height": Double(bounds.height),
                     "main": CGDisplayIsMain(ids[index]) != 0, "hasCursor": bounds.contains(mouse)]
         }
     }
@@ -230,7 +231,8 @@ nonisolated final class AgenticOSHands: @unchecked Sendable {
         defer { try? FileManager.default.removeItem(atPath: file) }
         guard let source = CGImageSourceCreateWithURL(URL(fileURLWithPath: file) as CFURL, nil),
               let image = CGImageSourceCreateImageAtIndex(source, 0, nil) else { throw Failure("screenshot failed") }
-        let pointsWidth = info["width"] as! Double, pointsHeight = info["height"] as! Double
+        let pointsWidth = (info["width"] as? Double) ?? Double(CGDisplayBounds(CGMainDisplayID()).width)
+        let pointsHeight = (info["height"] as? Double) ?? Double(CGDisplayBounds(CGMainDisplayID()).height)
         let scale = min(1.0, maxWidth / pointsWidth)
         let width = Int((pointsWidth * scale).rounded()), height = Int((pointsHeight * scale).rounded())
         guard let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
