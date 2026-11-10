@@ -241,8 +241,18 @@ nonisolated final class AgenticOSHands: @unchecked Sendable {
         context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
         guard let small = context.makeImage(),
               let jpeg = NSBitmapImageRep(cgImage: small).representation(using: .jpeg, properties: [.compressionFactor: 0.72]) else { throw Failure("encode failed") }
+        // a 48x30 grey thumbnail, so the Voice Agent can tell in a millisecond whether the view changed
+        var thumb = Data()
+        if let small = CGContext(data: nil, width: 48, height: 30, bitsPerComponent: 8, bytesPerRow: 48,
+                                 space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.none.rawValue) {
+            small.interpolationQuality = .medium
+            small.draw(image, in: CGRect(x: 0, y: 0, width: 48, height: 30))
+            if let bytes = small.data { thumb = Data(bytes: bytes, count: 48 * 30) }
+        }
+        let front = NSWorkspace.shared.frontmostApplication
         return ["image": jpeg.base64EncodedString(), "width": width, "height": height, "scale": scale,
-                "originX": info["x"]!, "originY": info["y"]!, "display": display, "displays": list]
+                "originX": info["x"]!, "originY": info["y"]!, "display": display, "displays": list,
+                "thumb": thumb.base64EncodedString(), "frontApp": front?.localizedName ?? "", "frontBundle": front?.bundleIdentifier ?? ""]
     }
 
     // MARK: the keyboard
