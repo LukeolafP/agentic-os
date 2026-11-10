@@ -7,6 +7,7 @@
 # the same way. With the stable certificate, macOS keeps the app's Microphone, Accessibility and
 # Screen Recording permissions across rebuilds; an ad-hoc build asks for them again every time.
 set -e
+set -o pipefail          # a failed xcodebuild stops the script: never install the previous build
 cd "$(dirname "$0")/../macos/OpenClicky"
 xcodebuild -project OpenClicky.xcodeproj -scheme OpenClicky -configuration Release \
   -derivedDataPath ../../build CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= \
