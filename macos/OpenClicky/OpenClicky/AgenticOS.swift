@@ -36,6 +36,7 @@ enum AgenticOS {
     @MainActor static func start(companion: CompanionManager) {
         AgenticOSHands.shared.start(companion: companion)
         AgenticOSEventStream.shared.start(companion: companion)
+        ScreenDrawing.shared.companion = companion
         Task.detached { await startServices() }
         // the program opens on the OS, unless it was started at login
         if !CommandLine.arguments.contains("--background") { showWindow() }

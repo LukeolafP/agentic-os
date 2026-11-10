@@ -42,6 +42,11 @@ final class CompanionManager: ObservableObject {
             }
             // Agentic OS: a latched ⌃⌥ turn is over once nothing is listening (sent, esc, an error).
             if isTalkLatched && (voiceState == .idle || voiceState == .responding) { isTalkLatched = false }
+            // Agentic OS: the talk turn ended: the drawing panel goes (its drawing with the question
+            // when the turn was sent, to be transcribed).
+            if oldValue == .listening && voiceState != .listening && !isDictatingToFrontApp {
+                ScreenDrawing.shared.talkTurnEnded(sent: voiceState == .processing)
+            }
         }
     }
     @Published private(set) var lastTranscript: String?
@@ -91,6 +96,13 @@ final class CompanionManager: ObservableObject {
     /// Agentic OS: what the Voice Agent is saying on its own (an announcement from the backend's
     /// /events), shown as the island's caption line while it is spoken (VoiceAgentAnnouncer).
     @Published var announcementText: String?
+    /// Agentic OS: pictures Luke added during the talk turn (drawings, region screenshots), sent with
+    /// the next question after the pointer close-up, then cleared (ScreenDrawing.swift).
+    @Published private(set) var pendingUserImages: [(data: Data, label: String)] = []
+
+    func addPendingUserImage(data: Data, label: String) {
+        pendingUserImages.append((data: data, label: label))
+    }
 
     /// Files the last agent turn created or changed.
     @Published private(set) var lastAgentArtifacts: [String] = []
@@ -1935,6 +1947,13 @@ final class CompanionManager: ObservableObject {
                    let closeUp = PointerCloseUp.jpeg(from: pointedCapture.imageData, around: pointer) {
                     pointerCloseUpImage = (data: closeUp, label: PointerCloseUp.label())
                     labeledImages.append(pointerCloseUpImage!)
+                }
+                // Agentic OS: what Luke drew or cut out during the turn (ScreenDrawing.swift).
+                await ScreenDrawing.shared.waitForSnapshots()
+                if !pendingUserImages.isEmpty {
+                    AppLog.append("ask: \(pendingUserImages.count) picture(s) from Luke attached")
+                    labeledImages += pendingUserImages
+                    pendingUserImages.removeAll()
                 }
                 let secondsSinceLastQuestion = lastAskQuestion.map { Date().timeIntervalSince($0.askedAt) } ?? .infinity
                 let isRepeatedQuestion = RepeatedQuestion.isRepeat(transcript, of: lastAskQuestion?.transcript, secondsSincePrevious: secondsSinceLastQuestion)

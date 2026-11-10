@@ -1141,9 +1141,12 @@ final class NotchHUDManager {
             .store(in: &busyCancellables)
         companionManager.$voiceState
             .combineLatest(companionManager.$agentActivityText, companionManager.$lastTranscript, companionManager.$announcementText)
-            .map { voiceState, agentActivityText, lastTranscript, announcementText in
-                NotchCompactStatusView.detailLine(voiceState: voiceState, agentActivityText: agentActivityText, lastTranscript: lastTranscript,
-                                                  announcementText: announcementText) != nil
+            .combineLatest(companionManager.$isDictatingToFrontApp)
+            .map { values, isDictating in
+                let (voiceState, agentActivityText, lastTranscript, announcementText) = values
+                return NotchCompactStatusView.showsTalkTools(voiceState: voiceState, isDictating: isDictating, agentActivityText: agentActivityText)
+                    || NotchCompactStatusView.detailLine(voiceState: voiceState, agentActivityText: agentActivityText, lastTranscript: lastTranscript,
+                                                         announcementText: announcementText) != nil
             }
             .removeDuplicates()
             .sink { [weak self] hasDetailLine in
@@ -1665,7 +1668,14 @@ struct NotchCompactStatusView: View {
             }
             .frame(height: bandHeight)
 
-            if let detailLine = Self.detailLine(
+            if Self.showsTalkTools(voiceState: companionManager.voiceState, isDictating: companionManager.isDictatingToFrontApp,
+                                   agentActivityText: companionManager.agentActivityText) {
+                // Agentic OS: draw, clear and region screenshot while a ⌃⌥ turn listens.
+                NotchTalkTools(companionManager: companionManager)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(height: 24)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            } else if let detailLine = Self.detailLine(
                 voiceState: companionManager.voiceState,
                 agentActivityText: companionManager.agentActivityText,
                 lastTranscript: companionManager.lastTranscript,
@@ -1753,6 +1763,11 @@ struct NotchCompactStatusView: View {
     /// An agent's work keeps the click that opens the panel; only the ask lane's own question stops.
     private var isQuestionOnItsWay: Bool { companionManager.isAskInFlight && companionManager.agentActivityText == nil }
 
+    /// Agentic OS: the talk turn's tools take the caption line while a ⌃⌥ turn listens.
+    static func showsTalkTools(voiceState: CompanionVoiceState, isDictating: Bool, agentActivityText: String?) -> Bool {
+        voiceState == .listening && !isDictating && (agentActivityText ?? "").isEmpty
+    }
+
     /// The strip's caption line, or nil for a strip with only its status. The HUD manager asks the
     /// same question to size the island, so it is static and takes the published values.
     static func detailLine(voiceState: CompanionVoiceState, agentActivityText: String?, lastTranscript: String?, announcementText: String? = nil) -> String? {
@@ -1790,6 +1805,54 @@ struct NotchCompactStatusView: View {
             if companionManager.announcementText != nil { return "voice agent" }
             return companionManager.answeringSourceName.map { "speaking · \($0)" } ?? "speaking"
         }
+    }
+}
+
+/// Agentic OS: the talk turn's tools on the busy strip's second line: the pencil (draw on the
+/// screen), clear (attach the drawing and wipe it), the region screenshot, and how many pictures
+/// will go with the question (ScreenDrawing.swift). Buttons, above the island's own click gesture.
+struct NotchTalkTools: View {
+    @ObservedObject var companionManager: CompanionManager
+    @ObservedObject private var drawing = ScreenDrawing.shared
+
+    var body: some View {
+        HStack(spacing: 6) {
+            tool("pencil.tip", help: drawing.isPanelShown ? "stop drawing" : "draw on the screen", isOn: drawing.isPanelShown) {
+                drawing.togglePencil()
+            }
+            tool("eraser", help: "attach the drawing and clear it", isOn: false) {
+                drawing.clearDrawing()
+            }
+            .disabled(drawing.strokes.isEmpty)
+            .opacity(drawing.strokes.isEmpty ? 0.45 : 1)
+            tool("rectangle.dashed", help: "screenshot a region", isOn: drawing.isSelectingRegion) {
+                drawing.captureRegion()
+            }
+            Spacer(minLength: 8)
+            if !companionManager.pendingUserImages.isEmpty {
+                Text("\(companionManager.pendingUserImages.count) attached")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(DS.HUD.text)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 2)
+                    .background(Capsule().fill(Color.white.opacity(0.16)))
+                    .accessibilityLabel("\(companionManager.pendingUserImages.count) pictures attached")
+            }
+        }
+    }
+
+    private func tool(_ symbol: String, help: String, isOn: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(isOn ? .black : DS.HUD.text)
+                .frame(width: 28, height: 22)
+                .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(isOn ? Color.white : Color.white.opacity(0.12)))
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(help)
+        .accessibilityLabel(help)
     }
 }
 
