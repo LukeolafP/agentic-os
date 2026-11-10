@@ -146,7 +146,7 @@ final class GlobalPushToTalkShortcutMonitor: ObservableObject {
             case .talkReleased:
                 shortcutTransitionPublisher.send(.released)
             case .dictationPressed, .dictationEditPressed, .dictationEditModifierJoined, .dictationReleased, .dictationDoubleTapped,
-                 .escapePressed, .textComposerRequested, .handsFreeToggleRequested:
+                 .dictationLatched, .talkCancelled, .escapePressed, .textComposerRequested, .handsFreeToggleRequested:
                 companionShortcutPublisher.send(shortcutEvent)
             }
         }

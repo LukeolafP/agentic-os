@@ -1781,6 +1781,7 @@ struct NotchCompactStatusView: View {
             return companionManager.isAlwaysListening ? "hands-free · just talk" : "agentic os"
         case .listening:
             if isDictating { return "dictating" }
+            if companionManager.isTalkLatched { return "listening · press ⌃⌥ to send" }
             return companionManager.isAlwaysListening ? "listening · hands-free" : "listening"
         case .processing:
             if isDictating { return "typing it in" }

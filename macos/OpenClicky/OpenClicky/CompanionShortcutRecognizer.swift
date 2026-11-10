@@ -6,7 +6,11 @@
 //    Dictate     hold the dictation key (fn)      hold → speak → release; a tap starts a take that
 //                                                 the next tap ends; two quick taps cancel; esc cancels
 //    Hey Clicky  dictation key + control held     the take is an edit instruction, not words to type
-//    Talk        hold control + option            (push-to-talk to the companion; released = send)
+//    Talk        hold control + option            (push-to-talk to the companion; released = send;
+//                                                 a double tap latches it, CompanionManager)
+//    Dictate ⌃⌘  hold control + command           (Agentic OS: dictation's second key: hold → speak →
+//                                                 release; a tap starts a take the next press ends; a
+//                                                 double tap latches it until the next press)
 //    Text        tap control twice                (opens the text composer in the notch)
 //    Hands-free  tap dictation key + control twice (toggles always-on listening)
 //  A pure state machine — no NSEvent objects — so it is unit-testable.
@@ -37,6 +41,10 @@ enum CompanionShortcutEvent: Equatable {
     case dictationReleased(wasTap: Bool, keyWasPressedDuringHold: Bool = false)
     /// Two quick taps of the dictation key: discard the take in progress.
     case dictationDoubleTapped
+    /// Agentic OS: two quick taps of ⌃⌘: the take in progress stays open until ⌃⌘ is pressed again.
+    case dictationLatched
+    /// Agentic OS: ⌘ joined a held ⌃⌥ (⌃⌥⌘ is not talk): the question is dropped, not sent.
+    case talkCancelled
     /// The escape key went down (the controller cancels a take in progress).
     case escapePressed
     case textComposerRequested
@@ -68,6 +76,18 @@ struct CompanionShortcutRecognizer {
 
     private(set) var isTalkHeld = false
     private(set) var isDictationKeyHeld = false
+    /// Agentic OS: ⌃⌘ (dictation's chord) is held.
+    private(set) var isDictationChordHeld = false
+    private var dictationChordStartedAt: TimeInterval?
+    /// A key (or ⌥ / ⇧) went down or up while ⌃⌘ was held: not a tap.
+    private var keyEventDuringDictationChord = false
+    /// A key went down while ⌃⌘ was held (⌃⌘F): the chord was a shortcut, and the take is thrown away.
+    private var keyWentDownDuringDictationChord = false
+    private var lastDictationChordTapCompletedAt: TimeInterval?
+    /// The second press of a possible double tap: nothing is sent until its release says which.
+    private var dictationChordPressHeldBack = false
+    /// ⌃⌘ came together with ⌥, ⇧, talk or the dictation key already down: not the chord until ⌃ or ⌘ is let go.
+    private var dictationChordHeldBack = false
 
     /// The flags of the last event as the companion shortcuts read them (see `companionFlags`).
     private var previousCompanionFlags: NSEvent.ModifierFlags = []
@@ -117,6 +137,11 @@ struct CompanionShortcutRecognizer {
                 keyEventDuringDictationHold = true
                 if eventKind == .keyDown { keyWentDownDuringDictationHold = true }
             }
+            if isDictationChordHeld {
+                keyEventDuringDictationChord = true
+                if eventKind == .keyDown { keyWentDownDuringDictationChord = true }
+            }
+            lastDictationChordTapCompletedAt = nil
             controlTapStartedAt = nil
             lastControlTapCompletedAt = nil
             lastDictationTapCompletedAt = nil
@@ -142,7 +167,9 @@ struct CompanionShortcutRecognizer {
 
         var companionFlags = companionFlags(trackedFlags: trackedFlags, rawModifierFlags: rawModifierFlags,
                                             dictationKeyIsHeld: dictationKeyWentDown || (isDictationKeyHeld && !dictationKeyWentUp))
-        let talkModifiersDown = companionFlags.contains([.control, .option])
+        // Agentic OS: ⌃⌥ is talk only without ⌘ (⌃⌥⌘ is neither talk nor dictation); once held,
+        // ⌘ joining drops the question (talkCancelled below).
+        let talkModifiersDown = companionFlags.contains([.control, .option]) && (isTalkHeld || !companionFlags.contains(.command))
 
         var dictationEvents: [CompanionShortcutEvent] = []
         if dictationKeyWentDown {
@@ -191,19 +218,26 @@ struct CompanionShortcutRecognizer {
         }
 
         // Talk starts only while the dictation key is up; ⌃⌥ completed during a take is the take's
-        // (control already made it an edit), and stays held back until ⌃ or ⌥ is let go.
-        if !talkModifiersDown {
+        // (control already made it an edit), and stays held back until ⌃ or ⌥ is let go. So does
+        // ⌃⌥ reached from ⌃⌥⌘ or from a held ⌃⌘.
+        if !companionFlags.contains([.control, .option]) {
             talkHeldBackByDictation = false
-        } else if isDictationKeyHeld && !isTalkHeld {
+        } else if (isDictationKeyHeld || isDictationChordHeld || companionFlags.contains(.command)) && !isTalkHeld {
             talkHeldBackByDictation = true
         }
         let isTalkHeldNow = talkModifiersDown && !talkHeldBackByDictation
         var events: [CompanionShortcutEvent] = []
-        if isTalkHeldNow != isTalkHeld {
+        if isTalkHeld && isTalkHeldNow && companionFlags.contains(.command) {
+            // ⌘ joined the question: ⌃⌥⌘ is someone's shortcut, so nothing is sent.
+            isTalkHeld = false
+            talkHeldBackByDictation = true
+            events.append(.talkCancelled)
+        } else if isTalkHeldNow != isTalkHeld {
             isTalkHeld = isTalkHeldNow
             events.append(isTalkHeldNow ? .talkPressed : .talkReleased)
         }
         events += dictationEvents
+        events += dictationChordEvents(companionFlags: companionFlags, at: time)
 
         // A control tap: control alone goes down from no modifiers, and everything comes back up
         // shortly after without any other modifier or key joining in between. The dictation key
@@ -230,6 +264,53 @@ struct CompanionShortcutRecognizer {
         previousCompanionFlags = companionFlags
         previousTrackedFlags = trackedFlags
         return events
+    }
+
+    /// Agentic OS: ⌃⌘, dictation's second key. Exactly ⌃⌘ down (no ⌥ or ⇧, no talk, no dictation
+    /// key) starts it; it stays held while ⌃ and ⌘ are both down, and ⌥ or ⇧ joining counts as a
+    /// key pressed during the hold. Its events are the dictation key's own, so the take controller
+    /// treats a hold, a tap and a key pressed during it the same way; a double tap latches the take
+    /// instead of cancelling it.
+    private mutating func dictationChordEvents(companionFlags: NSEvent.ModifierFlags, at time: TimeInterval) -> [CompanionShortcutEvent] {
+        let chordFlags: NSEvent.ModifierFlags = [.control, .command]
+        let chordKeysDown = companionFlags.contains(chordFlags)
+        if !chordKeysDown { dictationChordHeldBack = false }
+        if isDictationChordHeld {
+            if chordKeysDown {
+                if !companionFlags.intersection([.option, .shift]).isEmpty && !keyWentDownDuringDictationChord {
+                    keyEventDuringDictationChord = true
+                    keyWentDownDuringDictationChord = true
+                }
+                return []
+            }
+            isDictationChordHeld = false
+            let holdDuration = dictationChordStartedAt.map { time - $0 } ?? .infinity
+            let wasTap = holdDuration <= Self.tapMaxHoldSeconds && !keyEventDuringDictationChord
+            dictationChordStartedAt = nil
+            if dictationChordPressHeldBack {
+                dictationChordPressHeldBack = false
+                lastDictationChordTapCompletedAt = nil
+                // A second quick tap latches the take; held, it was the press that ends it.
+                return wasTap ? [.dictationLatched] : [.dictationPressed]
+            }
+            lastDictationChordTapCompletedAt = wasTap ? time : nil
+            return [.dictationReleased(wasTap: wasTap, keyWasPressedDuringHold: keyWentDownDuringDictationChord)]
+        }
+        guard chordKeysDown else { return [] }
+        if !companionFlags.intersection([.option, .shift]).isEmpty || isTalkHeld || isDictationKeyHeld {
+            dictationChordHeldBack = true
+        }
+        guard !dictationChordHeldBack else { return [] }
+        isDictationChordHeld = true
+        dictationChordStartedAt = time
+        keyEventDuringDictationChord = false
+        keyWentDownDuringDictationChord = false
+        if let lastTap = lastDictationChordTapCompletedAt, time - lastTap <= Self.doubleTapWindowSeconds {
+            dictationChordPressHeldBack = true
+            return []
+        }
+        lastDictationChordTapCompletedAt = nil
+        return [.dictationPressed]
     }
 
     /// Whether this flagsChanged event moved the dictation key, and to where: nil when it was

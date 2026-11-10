@@ -40,6 +40,8 @@ final class CompanionManager: ObservableObject {
             if voiceState == .idle && guidedStepWatcher == nil && guideStepUnderWay != nil {
                 guideStepUnderWay = nil
             }
+            // Agentic OS: a latched ⌃⌥ turn is over once nothing is listening (sent, esc, an error).
+            if isTalkLatched && (voiceState == .idle || voiceState == .responding) { isTalkLatched = false }
         }
     }
     @Published private(set) var lastTranscript: String?
@@ -1212,7 +1214,7 @@ final class CompanionManager: ObservableObject {
             .shortcutTransitionPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] transition in
-                self?.handleShortcutTransition(transition)
+                self?.handleTalkKey(transition)
             }
         companionShortcutCancellable = globalPushToTalkShortcutMonitor
             .companionShortcutPublisher
@@ -1439,8 +1441,17 @@ final class CompanionManager: ObservableObject {
             openTextComposer()
         case .handsFreeToggleRequested:
             toggleHandsFree()
-        case .dictationPressed, .dictationEditPressed, .dictationEditModifierJoined, .dictationReleased, .dictationDoubleTapped:
+        case .dictationPressed, .dictationEditPressed, .dictationEditModifierJoined, .dictationReleased, .dictationDoubleTapped, .dictationLatched:
             dictationTakeController.handle(shortcutEvent)
+        case .talkCancelled:
+            // Agentic OS: ⌘ joined ⌃⌥, someone's ⌃⌥⌘ shortcut: the question is dropped, not sent.
+            AppLog.append("ask: ⌘ joined ⌃⌥, dropped")
+            talkKeyPressedAt = nil
+            deferredTalkRelease?.cancel()
+            deferredTalkRelease = nil
+            isTalkSecondTap = false
+            isTalkLatched = false
+            if !stopAskLane(from: "⌃⌥⌘", caption: nil) { handleShortcutTransition(.released) }
         case .escapePressed:
             // A continuous scroll by voice stops on esc whatever else is going on.
             if ScreenNavigation.stopContinuousScroll() { AppLog.append("scroll: continuous scroll stopped (esc)") }
@@ -1549,6 +1560,81 @@ final class CompanionManager: ObservableObject {
         let line = how.map { "hands-free \(state) (\($0))" } ?? "hands-free \(state)"
         print("👂 \(line)")
         AppLog.append(line)
+    }
+
+    // MARK: - ⌃⌥ double-tap latch (Agentic OS)
+
+    /// A ⌃⌥ turn opened by a double tap: it keeps listening until ⌃⌥ is pressed again, which sends.
+    @Published private(set) var isTalkLatched = false
+    private var talkKeyPressedAt: TimeInterval?
+    /// A tap's release, held for the double-tap window: a second press within it keeps the turn.
+    private var deferredTalkRelease: DispatchWorkItem?
+    /// The press in progress is the second of a double tap (the turn from the first is still open).
+    private var isTalkSecondTap = false
+    /// The press in progress sent a latched turn: its release is nothing.
+    private var talkPressSentLatchedTurn = false
+
+    /// ⌃⌥ from the keyboard. Hold-to-talk is unchanged (press listens, release sends); two taps
+    /// (each under `tapMaxHoldSeconds`, the second within `doubleTapWindowSeconds` of the first's
+    /// release) latch the turn open until the next press. A tap's release waits out that window
+    /// before it sends, so the double tap is one turn rather than two.
+    private func handleTalkKey(_ transition: BuddyPushToTalkShortcut.ShortcutTransition) {
+        let now = ProcessInfo.processInfo.systemUptime
+        switch transition {
+        case .pressed:
+            if isTalkLatched {
+                isTalkLatched = false
+                if voiceState == .listening {
+                    AppLog.append("ask: ⌃⌥ pressed, sending the latched turn")
+                    talkPressSentLatchedTurn = true
+                    handleShortcutTransition(.released)
+                    return
+                }
+            }
+            if let deferredTalkRelease {
+                deferredTalkRelease.cancel()
+                self.deferredTalkRelease = nil
+                isTalkSecondTap = true
+                talkKeyPressedAt = now
+                return
+            }
+            isTalkSecondTap = false
+            talkKeyPressedAt = now
+            handleShortcutTransition(.pressed)
+        case .released:
+            if talkPressSentLatchedTurn {
+                talkPressSentLatchedTurn = false
+                return
+            }
+            let heldFor = talkKeyPressedAt.map { now - $0 } ?? .infinity
+            talkKeyPressedAt = nil
+            let wasTap = heldFor <= CompanionShortcutRecognizer.tapMaxHoldSeconds
+            if isTalkSecondTap {
+                isTalkSecondTap = false
+                if wasTap && (voiceState == .listening || voiceState == .processing) {
+                    AppLog.append("ask: ⌃⌥ double tap, latched")
+                    isTalkLatched = true
+                    showAskCaption("listening · press ⌃⌥ to send", holdSeconds: 60)
+                    return
+                }
+                handleShortcutTransition(.released)
+                return
+            }
+            // .processing here is the microphone still opening: the turn has not been sent yet.
+            if wasTap && (voiceState == .listening || voiceState == .processing) {
+                let release = DispatchWorkItem { [weak self] in
+                    guard let self else { return }
+                    self.deferredTalkRelease = nil
+                    self.handleShortcutTransition(.released)
+                }
+                deferredTalkRelease = release
+                DispatchQueue.main.asyncAfter(deadline: .now() + CompanionShortcutRecognizer.doubleTapWindowSeconds, execute: release)
+                return
+            }
+            handleShortcutTransition(.released)
+        case .none:
+            break
+        }
     }
 
     func handleShortcutTransition(_ transition: BuddyPushToTalkShortcut.ShortcutTransition) {
@@ -2278,6 +2364,7 @@ final class CompanionManager: ObservableObject {
     /// when there was nothing to stop.
     @discardableResult
     func stopAskLane(from source: String, caption: String? = "stopped") -> Bool {
+        isTalkLatched = false
         guard askLaneCanBeStopped else { return false }
         AppLog.append("ask: stopped (\(source))")
         if askOutcome != .resolved {

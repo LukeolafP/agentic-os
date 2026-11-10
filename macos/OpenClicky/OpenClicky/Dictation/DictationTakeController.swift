@@ -469,6 +469,13 @@ final class DictationTakeController: ObservableObject {
             if isTakeInProgress { cancelTake(reason: "cancelled") }
             return true
 
+        case .dictationLatched:
+            // Agentic OS: ⌃⌘ tapped twice: the take stays open until ⌃⌘ is pressed again.
+            guard state == .starting || state == .listening else { return true }
+            takeIsToggle = true
+            orb.hint = "latched, press ⌃⌘ to paste"
+            return true
+
         case .escapePressed:
             guard isTakeInProgress else { return false }
             cancelTake(reason: "cancelled")
@@ -481,7 +488,7 @@ final class DictationTakeController: ObservableObject {
             pendingEditStartWork = nil
             return false
 
-        case .talkPressed, .talkReleased, .textComposerRequested:
+        case .talkPressed, .talkReleased, .talkCancelled, .textComposerRequested:
             return false
         }
     }

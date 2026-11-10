@@ -40,7 +40,7 @@ enum SettingsLayout {
 
     private static let dictationGroups: [Group] = [
         Group(page: .dictation, title: "", itemIDs: [
-            "keyboard.dictationKey", "keyboard.fnWarning", "dictation.engine.*", "dictation.language", "dictation.cleanUp",
+            "keyboard.dictationKey", "keyboard.dictateChord", "keyboard.fnWarning", "dictation.engine.*", "dictation.language", "dictation.cleanUp",
         ]),
         Group(page: .dictation, title: "Your writing", itemIDs: ["dictation.openWords", "dictation.openWriting"]),
         Group(page: .dictation, title: "Microphone", itemIDs: ["dictation.input", "dictation.micTest"]),

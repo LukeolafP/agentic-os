@@ -75,10 +75,17 @@ extension SettingsCatalog {
                 })),
             SettingsItem(
                 id: "keyboard.talk",
-                title: "Talk to the Voice Agent", detail: "Ask about anything on screen. It answers out loud and points.",
-                keywords: ["⌃", "⌥", "control option", "voice", "ask", "companion"],
-                view: AnyView(SettingsRow(title: "Talk to the Voice Agent", detail: "Ask about anything on screen. It answers out loud and points.") {
+                title: "Talk to the Voice Agent", detail: "Ask about anything on screen. It answers out loud and points. Tap twice to keep listening until you press ⌃⌥ again.",
+                keywords: ["⌃", "⌥", "control option", "voice", "ask", "companion", "double tap", "latch"],
+                view: AnyView(SettingsRow(title: "Talk to the Voice Agent", detail: "Ask about anything on screen. It answers out loud and points. Tap twice to keep listening until you press ⌃⌥ again.") {
                     SettingsKeys(keys: ["⌃", "⌥"], gesture: "hold")
+                })),
+            SettingsItem(
+                id: "keyboard.dictateChord",
+                title: "Dictate with ⌃⌘", detail: "Hold to dictate, or tap to start and tap to paste. Tap twice to keep it on until you press ⌃⌘ again.",
+                keywords: ["⌃", "⌘", "control command", "dictate", "dictation", "chord", "latch"],
+                view: AnyView(SettingsRow(title: "Dictate with ⌃⌘", detail: "Hold to dictate, or tap to start and tap to paste. Tap twice to keep it on until you press ⌃⌘ again.") {
+                    SettingsKeys(keys: ["⌃", "⌘"], gesture: "hold")
                 })),
             SettingsItem(
                 id: "keyboard.type",
