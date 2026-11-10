@@ -84,11 +84,15 @@ nonisolated struct ProviderCredentials: Equatable, Sendable {
     var codexPlanOn = false
     /// Who should answer, when the person picked one (nil: automatic).
     var preferredAnswerSource: AnswerSource?
+    /// Agentic OS: the backend is on this Mac, so it answers everything; an old pick of a plan or
+    /// a key (the picker is gone) must not route the question elsewhere.
+    var backendIsLocal = false
 
     init(openAIKey: String?, anthropicKey: String?, accountToken: String?,
          openRouterKey: String? = nil, geminiKey: String? = nil, groqKey: String? = nil,
          mistralKey: String? = nil, xaiKey: String? = nil,
-         claudeCodePlanOn: Bool = false, codexPlanOn: Bool = false, preferredAnswerSource: AnswerSource? = nil) {
+         claudeCodePlanOn: Bool = false, codexPlanOn: Bool = false, preferredAnswerSource: AnswerSource? = nil,
+         backendIsLocal: Bool = false) {
         func cleaned(_ value: String?) -> String? {
             let trimmed = (value ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             return trimmed.isEmpty ? nil : trimmed
@@ -104,6 +108,7 @@ nonisolated struct ProviderCredentials: Equatable, Sendable {
         self.claudeCodePlanOn = claudeCodePlanOn
         self.codexPlanOn = codexPlanOn
         self.preferredAnswerSource = preferredAnswerSource
+        self.backendIsLocal = backendIsLocal
     }
 
     init(settings: OpenClickyShellSettings) {
@@ -111,7 +116,8 @@ nonisolated struct ProviderCredentials: Equatable, Sendable {
                   openRouterKey: settings.openRouterApiKey, geminiKey: settings.geminiApiKey, groqKey: settings.groqApiKey,
                   mistralKey: settings.mistralApiKey, xaiKey: settings.xaiApiKey,
                   claudeCodePlanOn: settings.useClaudeCodePlan == true, codexPlanOn: settings.useCodexPlan == true,
-                  preferredAnswerSource: settings.answerSource.flatMap(AnswerSource.init(rawValue:)))
+                  preferredAnswerSource: settings.answerSource.flatMap(AnswerSource.init(rawValue:)),
+                  backendIsLocal: OpenClickyConfiguration.isLocalBackend(settings.backendUrl))
     }
 
     /// The key for an API source, nil for the plans and the account.
@@ -158,6 +164,7 @@ nonisolated enum ProviderRouter {
     static func route(for capability: ProviderCapability, credentials: ProviderCredentials) -> ProviderRoute {
         switch capability {
         case .claude:
+            if credentials.backendIsLocal { return .backend }      // Agentic OS: the Voice Agent on this Mac, always
             // The person's pick when it can answer, else the first that can in the automatic order.
             let source = credentials.preferredAnswerSource.flatMap { credentials.canAnswer(with: $0) ? $0 : nil }
                 ?? credentials.answerSourcesInOrder.first
