@@ -57,22 +57,37 @@ final class AnswerVoicePlayer {
             lastLoggedVoice = voice
         }
         let speaksWithAccountVoice = voice == .account
+        // Agentic OS: on the local backend the Voice Agent's voice is the only voice. A piece that
+        // is late or fails is skipped in silence (an empty piece, which `playToCompletion` passes
+        // over) and logged; the Mac's voice never takes over.
+        let onlyTheBackendSpeaks = speaksWithAccountVoice && OpenClickyConfiguration.backendIsLocal
         let fallbackVoice = speaksWithAccountVoice
             ? SpeechVoiceChoice.fastestLocalVoice(kokoroInstalled: KokoroVoice.isInstalled, languageCode: ReplyLanguage.currentCode)
             : voice
         return AnswerVoiceSession(
             speaksWithAccountVoice: speaksWithAccountVoice,
+            skipsTroubledPieces: onlyTheBackendSpeaks,
             fetchAccountAudio: { [weak self] pieceText in
                 guard let self else { throw CancellationError() }
-                return try await self.fetchAccountAudio(for: pieceText)
+                return try await self.fetchBackendAudio(for: pieceText)
             },
             fetchFallbackAudio: { [session] pieceText in
-                try await CloudVoiceSpeaker.audio(for: pieceText, voice: fallbackVoice, session: session)
+                if onlyTheBackendSpeaks { return Data() }
+                return try await CloudVoiceSpeaker.audio(for: pieceText, voice: fallbackVoice, session: session)
             },
             onFirstAccountAudio: { seconds in
                 AppLog.append(String(format: "voice: account first sound in %.1f s", seconds))
             },
             onAccountTrouble: { trouble in
+                if onlyTheBackendSpeaks {
+                    switch trouble {
+                    case .tooSlow(let pieceNumber, let seconds):
+                        AppLog.append(String(format: "voice: piece %d not back in %.0f s; skipped", pieceNumber + 1, seconds))
+                    case .failed(let pieceNumber, let error):
+                        AppLog.append("voice: piece \(pieceNumber + 1) failed (\((error as NSError).code)); skipped")
+                    }
+                    return
+                }
                 switch trouble {
                 case .tooSlow(let pieceNumber, let seconds):
                     AppLog.append(String(format: "voice: account piece %d not back in %.1f s; %@ speaks the rest",
@@ -97,8 +112,9 @@ final class AnswerVoicePlayer {
         try await makeAnswerSession().audio(for: text)
     }
 
-    /// One piece from the backend's /tts, the account's free ElevenLabs voice.
-    private func fetchAccountAudio(for text: String) async throws -> Data {
+    /// One piece from the backend's /tts: the account's free ElevenLabs voice, or on the local
+    /// backend the Voice Agent's voice. Also what the notices and the tours' lines are said with.
+    func fetchBackendAudio(for text: String) async throws -> Data {
         var request = URLRequest(url: proxyURL)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -128,6 +144,8 @@ final class AnswerVoicePlayer {
     /// stops the audio.
     func playToCompletion(_ data: Data) async throws {
         try Task.checkCancellation()
+        // A skipped piece (local backend, see makeAnswerSession): nothing to play.
+        guard !data.isEmpty else { return }
         let player = try AVAudioPlayer(data: data)
         let finishObserver = AudioPlayerFinishObserver()
         player.delegate = finishObserver

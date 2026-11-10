@@ -872,6 +872,11 @@ final class CompanionManager: ObservableObject {
     }
 
     func start() {
+        // Agentic OS: the notices and the tours' lines are said in the Voice Agent's voice.
+        recordedVoice.backendAudio = { [weak self] text in
+            guard let self, OpenClickyConfiguration.backendIsLocal else { throw CancellationError() }
+            return try await self.answerVoicePlayer.fetchBackendAudio(for: text)
+        }
         refreshAllPermissions()
         DrawStageSession.shared.attach(to: self)
         pointerPresenceTracker = PointerPresenceTracker(presence: pointerPresence)
@@ -2452,12 +2457,12 @@ final class CompanionManager: ObservableObject {
         if error is AskScreenCaptureError {
             return screenRecordingAllowed
                 ? "i couldn't see your screen just now. please ask again."
-                : "screen recording is off for openclicky. turn it on in system settings, privacy and security, screen recording."
+                : "screen recording is off for agentic os. turn it on in system settings, privacy and security, screen recording."
         }
         if let urlError = error as? URLError {
             switch urlError.code {
             case .notConnectedToInternet, .networkConnectionLost, .timedOut, .cannotFindHost, .cannotConnectToHost, .dnsLookupFailed:
-                return "i couldn't reach openclicky. check your internet and ask again."
+                return "i couldn't reach agentic os. check your internet and ask again."
             default:
                 break
             }
@@ -2694,7 +2699,11 @@ final class CompanionManager: ObservableObject {
     /// Turns waiting for the notice to end before they go back to idle (`waitForSystemVoiceNoticeToEnd`).
     private var systemVoiceNoticeEndWaiters: [CheckedContinuation<Void, Never>] = []
 
-    /// Says `text` in this Mac's voice, or plays its recording when it is one of the fixed notices.
+    /// Agentic OS: the notice being said in the Voice Agent's voice (fetched from the backend).
+    private var backendNoticeTask: Task<Void, Never>?
+
+    /// Says `text`: on the local backend in the Voice Agent's voice (Agentic OS), else in this Mac's
+    /// voice, or from its recording when it is one of the fixed notices.
     /// The state is `.responding` while it talks and goes back to `.idle` when it ends: nothing set
     /// it back before, so the island stayed "speaking" after a notice until the next question.
     func speakWithSystemVoice(_ text: String) {
@@ -2704,6 +2713,27 @@ final class CompanionManager: ObservableObject {
         isSystemVoiceNoticeSpeaking = true
         let noticeEnded: () -> Void = { [weak self] in self?.systemVoiceNoticeEnded(noticeNumber: noticeNumber) }
         voiceState = .responding
+        if OpenClickyConfiguration.backendIsLocal {
+            backendNoticeTask = Task { [weak self] in
+                guard let self else { return }
+                do {
+                    let audio = try await self.answerVoicePlayer.fetchBackendAudio(for: text)
+                    try await self.answerVoicePlayer.playToCompletion(audio)
+                    noticeEnded()
+                } catch is CancellationError {
+                } catch {
+                    guard !Task.isCancelled, noticeNumber == self.systemVoiceNoticeNumber else { return }
+                    // The backend could not say it: the recording, if there is one, else this Mac.
+                    AppLog.append("voice: the backend couldn't say a notice (\((error as NSError).code)); saying it another way")
+                    self.speakNoticeWithoutTheBackend(text, noticeEnded: noticeEnded)
+                }
+            }
+            return
+        }
+        speakNoticeWithoutTheBackend(text, noticeEnded: noticeEnded)
+    }
+
+    private func speakNoticeWithoutTheBackend(_ text: String, noticeEnded: @escaping () -> Void) {
         // A fixed notice that has a recording plays it, in the app's own voice.
         if let line = RecordedVoice.line(forSpokenText: text), recordedVoice.play(line, onFinished: noticeEnded) {
             return
@@ -2730,6 +2760,8 @@ final class CompanionManager: ObservableObject {
     private func stopSystemVoice() {
         systemVoiceNoticeNumber += 1
         isSystemVoiceNoticeSpeaking = false
+        backendNoticeTask?.cancel()
+        backendNoticeTask = nil
         systemSpeechSynthesizer.stopSpeaking(at: .immediate)
         recordedVoice.stop()
         resumeSystemVoiceNoticeEndWaiters()

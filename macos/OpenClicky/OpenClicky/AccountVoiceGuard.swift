@@ -20,13 +20,13 @@ enum AccountVoiceDeadline {
     /// Later pieces are fetched while earlier ones play, so they have room before anyone hears a gap.
     static let laterPieceSeconds: TimeInterval = 6
 
-    /// Agentic OS: Petra's backend on this Mac makes the Voice Agent's voice itself (Voxtral), which
-    /// can take a few seconds a sentence; it gets longer before this Mac's voice speaks instead.
-    static let localFirstPieceSeconds: TimeInterval = 10
-    static let localLaterPieceSeconds: TimeInterval = 15
+    /// Agentic OS: Petra's backend on this Mac makes the Voice Agent's voice itself (Voxtral), and
+    /// nothing else ever speaks: a piece waits this long (a hung request still ends), and a piece
+    /// that is late or fails is skipped, never said by another voice (AnswerVoicePlayer).
+    static let localPieceSeconds: TimeInterval = 45
 
     static func seconds(forPieceNumber pieceNumber: Int) -> TimeInterval {
-        if OpenClickyConfiguration.backendIsLocal { return pieceNumber == 0 ? localFirstPieceSeconds : localLaterPieceSeconds }
+        if OpenClickyConfiguration.backendIsLocal { return localPieceSeconds }
         return pieceNumber == 0 ? firstPieceSeconds : laterPieceSeconds
     }
 }
@@ -72,6 +72,8 @@ enum AccountVoiceRest {
     }
 
     static func recordTroubledAnswer() {
+        // Agentic OS: the local backend's voice is the only voice; it never rests.
+        guard !OpenClickyConfiguration.backendIsLocal else { return }
         if rule.recordTroubledAnswer(now: Date()) {
             AppLog.append("voice: account resting \(Int(AccountVoiceRestRule.restingSeconds / 60)) min after \(AccountVoiceRestRule.troubledAnswersBeforeResting) troubled answers")
         }
@@ -96,6 +98,9 @@ final class AnswerVoiceSession {
     }
 
     private let speaksWithAccountVoice: Bool
+    /// Agentic OS: a late or failed piece is reported and handed to the fallback (silence), and
+    /// the account voice goes on with the next piece instead of being let go for the answer.
+    private let skipsTroubledPieces: Bool
     private let fetchAccountAudio: (String) async throws -> Data
     private let fetchFallbackAudio: (String) async throws -> Data
     private let deadlineSeconds: (Int) -> TimeInterval
@@ -112,6 +117,7 @@ final class AnswerVoiceSession {
     /// `fetchAccountAudio` is only used when `speaksWithAccountVoice`; otherwise every piece goes to
     /// `fetchFallbackAudio`, which is then simply the voice that speaks.
     init(speaksWithAccountVoice: Bool,
+         skipsTroubledPieces: Bool = false,
          fetchAccountAudio: @escaping (String) async throws -> Data,
          fetchFallbackAudio: @escaping (String) async throws -> Data,
          deadlineSeconds: @escaping (Int) -> TimeInterval = AccountVoiceDeadline.seconds(forPieceNumber:),
@@ -120,6 +126,7 @@ final class AnswerVoiceSession {
          onAnswerOnTime: @escaping () -> Void = {},
          onTroubledAnswer: @escaping () -> Void = {}) {
         self.speaksWithAccountVoice = speaksWithAccountVoice
+        self.skipsTroubledPieces = skipsTroubledPieces
         self.fetchAccountAudio = fetchAccountAudio
         self.fetchFallbackAudio = fetchFallbackAudio
         self.deadlineSeconds = deadlineSeconds
@@ -161,6 +168,10 @@ final class AnswerVoiceSession {
     }
 
     private func fallBack(because trouble: AccountTrouble) {
+        if skipsTroubledPieces {
+            onAccountTrouble(trouble)
+            return
+        }
         guard !hasFallenBack else { return }
         hasFallenBack = true
         onAccountTrouble(trouble)
