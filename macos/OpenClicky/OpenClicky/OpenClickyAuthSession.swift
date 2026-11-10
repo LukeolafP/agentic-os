@@ -62,6 +62,8 @@ final class OpenClickyAuthSession: ObservableObject {
 
     /// Refreshes a stale session at launch and keeps refreshing on a timer.
     func start() {
+        // Agentic OS: the local backend has no accounts; nothing to refresh, nothing to ask.
+        guard !OpenClickyConfiguration.backendIsLocal else { return }
         refreshTimer?.invalidate()
         refreshTimer = Timer.scheduledTimer(withTimeInterval: 5 * 60, repeats: true) { [weak self] _ in
             Task { @MainActor in await self?.refreshIfNeeded() }
@@ -209,7 +211,7 @@ final class OpenClickyAuthSession: ObservableObject {
 
     /// Asks the backend whether it takes new accounts; a failure leaves the last answer.
     func refreshAccountsOpen() async {
-        guard let config = try? await authConfig() else { return }
+        guard !OpenClickyConfiguration.backendIsLocal, let config = try? await authConfig() else { return }
         accountsOpen = config.accountsOpen
     }
 
@@ -234,6 +236,7 @@ final class OpenClickyAuthSession: ObservableObject {
     /// an email after all (its guest room is full) or cannot be reached.
     @discardableResult
     func startGuestWithoutEmail() async -> Bool {
+        if OpenClickyConfiguration.backendIsLocal { return false }
         guard !OpenClickyConfiguration.isConfigured, let device = DeviceIdentity.current,
               let request = Self.post(OpenClickyConfiguration.backendBaseURL, "/auth/guest", ["device": device]) else { return false }
         do {
@@ -461,6 +464,7 @@ final class OpenClickyAuthSession: ObservableObject {
     /// Refreshes when the stored access token is within `refreshLeadSeconds` of expiring.
     @discardableResult
     func refreshIfNeeded(force: Bool = false) async -> RefreshOutcome {
+        if OpenClickyConfiguration.backendIsLocal { return .notNeeded }
         if let refreshInFlight { return await refreshInFlight.value }
         let settings = OpenClickyConfiguration.settings
         guard let refreshToken = settings.refreshToken?.nonEmpty else { return .notNeeded }

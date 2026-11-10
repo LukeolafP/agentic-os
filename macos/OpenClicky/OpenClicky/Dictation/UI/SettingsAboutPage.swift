@@ -41,9 +41,8 @@ extension SettingsCatalog {
     }
 }
 
-/// The app's icon, name and version, and Check Now beside them.
+/// The app's icon, name and version.
 private struct AboutAppRow: View {
-    @ObservedObject private var updater = AppUpdater.shared
     /// The icon follows the colour picked above it.
     @ObservedObject private var settings = DictationSettings.shared
 
@@ -60,27 +59,8 @@ private struct AboutAppRow: View {
                     .textSelection(.enabled)
             }
             Spacer()
-            Button("Check Now") { updater.checkNow() }
-                .disabled(!updater.isConfigured)
-                .pointerCursor(isEnabled: updater.isConfigured)
         }
         .padding(.vertical, 6)
     }
 }
 
-struct AutomaticUpdatesRow: View {
-    @ObservedObject private var updater = AppUpdater.shared
-    @State private var checksDaily = AppUpdater.shared.automaticallyChecks
-
-    var body: some View {
-        SettingsRow(title: "Check for updates daily",
-                    detail: updater.isConfigured ? updater.lastCheckDescription.prefix(1).uppercased() + updater.lastCheckDescription.dropFirst() + "." : "This build has no update feed (a development build).") {
-            SettingsSwitch(isOn: Binding(get: { checksDaily }, set: { isOn in
-                updater.automaticallyChecks = isOn
-                checksDaily = updater.automaticallyChecks
-            }))
-            .disabled(!updater.isConfigured)
-        }
-        .onAppear { checksDaily = updater.automaticallyChecks }
-    }
-}

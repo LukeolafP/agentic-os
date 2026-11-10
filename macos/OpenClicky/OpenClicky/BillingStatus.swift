@@ -101,7 +101,8 @@ final class BillingStatusModel: ObservableObject {
     @Published var errorText: String?
 
     func refresh() {
-        guard OpenClickyConfiguration.hasAccountToken else {
+        // Agentic OS: the local backend meters nothing; /billing/me is never asked.
+        guard OpenClickyConfiguration.hasAccountToken, !OpenClickyConfiguration.backendIsLocal else {
             summary = nil
             return
         }

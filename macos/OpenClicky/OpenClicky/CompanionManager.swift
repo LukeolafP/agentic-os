@@ -218,7 +218,10 @@ final class CompanionManager: ObservableObject {
     private var didGreetRealtime = false
     private var didConfigureRealtimeCallbacks = false
 
-    private var usesRealtimeVoice: Bool { isRealtimeVoiceEnabled && OpenClickyConfiguration.isConfigured && AccountCapabilities.current().usesRealtime }
+    /// Agentic OS: never on the local backend, which has no OpenAI Realtime or Gemini Live route.
+    private var usesRealtimeVoice: Bool {
+        !OpenClickyConfiguration.backendIsLocal && isRealtimeVoiceEnabled && OpenClickyConfiguration.isConfigured && AccountCapabilities.current().usesRealtime
+    }
 
     func setRealtimeVoiceEnabled(_ enabled: Bool) {
         isRealtimeVoiceEnabled = enabled
@@ -1448,7 +1451,8 @@ final class CompanionManager: ObservableObject {
         dictationTakeController.dictationManager.preferredMicrophoneUID = dictationSettings.preferredMicrophoneUID
         buddyDictationManager.preferredMicrophoneUID = dictationSettings.preferredMicrophoneUID
         realtimeVoiceClient.preferredMicrophoneUID = dictationSettings.preferredMicrophoneUID
-        AppUpdater.shared.start()
+        // Agentic OS: no Sparkle feed; updates come from a rebuild.
+        if !OpenClickyConfiguration.backendIsLocal { AppUpdater.shared.start() }
         clipboardHistoryMonitor.start()
     }
 
@@ -1922,7 +1926,8 @@ final class CompanionManager: ObservableObject {
                 // (teacher lane below: Claude + pointing) or real work (agent lane: Codex thread).
                 // The agent lane needs the openclicky tool (not in the downloaded app); without it the
                 // quick actions below are offered to whoever answers instead.
-                let agentLaneRuns = isAgentModeEnabled && OpenClickyConfiguration.isConfigured
+                // Agentic OS: never on the local backend, which answers everything itself.
+                let agentLaneRuns = isAgentModeEnabled && OpenClickyConfiguration.isConfigured && !OpenClickyConfiguration.backendIsLocal
                     && AccountCapabilities.current().usesAgent && OpenClickyAgentClient.isToolInstalled
                 if agentLaneRuns {
                     agentActivityText = "deciding…"

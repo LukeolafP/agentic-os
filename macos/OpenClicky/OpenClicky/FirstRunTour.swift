@@ -299,7 +299,9 @@ final class FirstRunTourController: ObservableObject {
     /// AI subscription the person already pays for can be used instead by adding its key.
     private var needsFreeAccountNote: Bool {
         // Questions are answered on OpenClicky's credits (no key or plan of their own answers).
-        ProviderRouter.route(for: .claude, credentials: ProviderRouter.currentCredentials()) == .backend
+        // Agentic OS: the local backend is not the free service; no account note.
+        !OpenClickyConfiguration.backendIsLocal
+            && ProviderRouter.route(for: .claude, credentials: ProviderRouter.currentCredentials()) == .backend
     }
 
     /// No key and no account (the guest start did not work): the account card asks for an email

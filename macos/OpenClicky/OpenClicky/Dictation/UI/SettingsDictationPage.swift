@@ -15,7 +15,9 @@ import SwiftUI
 extension SettingsCatalog {
     func dictationItems() -> [SettingsItem] {
         let region = settings.region
-        let engineItems = DictationEngineChoice.allCases.map { choice in
+        // Agentic OS: only the engines that hear on this Mac (Parakeet, Apple's recogniser); Sarvam,
+        // AssemblyAI and the OpenAI upload through the hosted backend went.
+        let engineItems = DictationEngineChoice.allCases.filter(\.isOnDevice).map { choice in
             SettingsItem(
                 id: "dictation.engine.\(choice.rawValue)",
                 title: choice.settingsTitle, detail: choice.settingsDetail,

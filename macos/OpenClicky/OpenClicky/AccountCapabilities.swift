@@ -150,7 +150,7 @@ final class AccountProfileStore: ObservableObject {
     }
 
     func refresh() {
-        guard OpenClickyConfiguration.hasAccountToken else {
+        guard OpenClickyConfiguration.hasAccountToken, !OpenClickyConfiguration.backendIsLocal else {
             onPlan = nil
             lastConfirmed = nil
             noteKind()

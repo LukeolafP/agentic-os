@@ -42,14 +42,6 @@ extension SettingsCatalog {
                 keywords: ["startup", "launch", "restart", "login item", "boot"],
                 view: AnyView(SettingsRow(title: "Open at login", detail: "So \(dictationKeyName) always works.") { LoginItemToggle() })),
             SettingsItem(
-                id: "general.walkthrough",
-                title: "Welcome tour", detail: "The Voice Agent shows you dictating, asking and handing over a task, from the island.",
-                keywords: ["onboarding", "setup", "replay", "tour", "first run"],
-                view: AnyView(SettingsRow(title: "Welcome tour", detail: "The Voice Agent shows you dictating, asking and handing over a task, from the island.") {
-                    Button("Replay…") { companionManager.firstRunTour.replay() }
-                        .pointerCursor()
-                })),
-            SettingsItem(
                 id: "general.settingsTour",
                 title: "Settings tour", detail: "A one-minute look around this window: the Voice Agent points at what matters most.",
                 keywords: ["tour", "crash course", "show me around", "help", "guide", "replay", "walkthrough"],
@@ -64,11 +56,6 @@ extension SettingsCatalog {
                 view: AnyView(SettingsRow(title: "Reduce motion", detail: "The orb and the island appear and leave without animating.") {
                     SettingsToggle(settings: settings, keyPath: \.reduceAnimation)
                 })),
-            SettingsItem(
-                id: "about.autoUpdate",
-                title: "Check for updates daily", detail: "Updates come through Sparkle.",
-                keywords: ["update", "updates", "sparkle", "automatic"],
-                view: AnyView(AutomaticUpdatesRow())),
         ]
     }
 }

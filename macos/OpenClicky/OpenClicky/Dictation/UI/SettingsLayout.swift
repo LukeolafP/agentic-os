@@ -54,15 +54,14 @@ enum SettingsLayout {
         ]),
     ]
 
+    // Agentic OS: the answer source, the Claude model, the speech voice, fast voice, agent mode and
+    // the workspace are gone; the backend on this Mac answers and speaks.
     private static let clickyGroups: [Group] = [
-        Group(page: .clicky, title: "", itemIDs: ["keyboard.talk", "clicky.speechVoice", "clicky.language", "clicky.answerSource", "clicky.drawToExplain"]),
-        Group(page: .clicky, title: "Hands-free", itemIDs: [
-            "clicky.fastVoice", "clicky.realtimeProvider", "clicky.fastVoiceNeedsKey", "clicky.alwaysListening",
-        ]),
+        Group(page: .clicky, title: "", itemIDs: ["keyboard.talk", "clicky.language", "clicky.drawToExplain"]),
+        Group(page: .clicky, title: "Hands-free", itemIDs: ["clicky.alwaysListening"]),
         Group(page: .clicky, title: "Pointer", itemIDs: ["clicky.pointer"]),
         Group(page: .clicky, title: "More", isAdvanced: true, itemIDs: [
-            "keyboard.type", "keyboard.handsFree", "clicky.model", "clicky.onThisMac", "clicky.emailApp", "clicky.emailNeverSent",
-            "plugins.teacher", "clicky.agentMode", "clicky.workspace",
+            "keyboard.type", "keyboard.handsFree", "clicky.onThisMac", "clicky.emailApp", "clicky.emailNeverSent", "plugins.teacher",
         ]),
     ]
 
@@ -77,13 +76,9 @@ enum SettingsLayout {
         Group(page: .calendars, title: nil, itemIDs: ["calendar.calendars", "calendar.calendar.*"]),
     ]
 
+    // Agentic OS: only the ElevenLabs key is left on the page (no account, allowance, plans, host or token).
     private static let accountGroups: [Group] = [
-        Group(page: .account, title: "", itemIDs: ["account.profile", "account.plan", "account.usage.backend"]),
-        Group(page: .account, title: "Your keys", itemIDs: ["account.keys", "account.keysNote"]),
-        Group(page: .account, title: "Plans", itemIDs: ["account.claudeCodePlan", "account.codexPlan", "account.plansNote"]),
-        Group(page: .account, title: "Advanced", isAdvanced: true, itemIDs: [
-            "account.usage.sarvam", "account.backendHost", "account.backendToken",
-        ]),
+        Group(page: .account, title: "", itemIDs: ["account.keys", "account.keysNote"]),
     ]
 
     private static let privacyGroups: [Group] = [
@@ -107,8 +102,9 @@ enum SettingsLayout {
         ]),
         // Appearance is the toolbar's button; search still finds it here.
         Group(page: .general, title: "Window", showsOnPage: false, itemIDs: ["general.appearance"]),
-        Group(page: .general, title: "Tours", itemIDs: ["general.walkthrough", "general.settingsTour"]),
-        Group(page: .general, title: "Updates", itemIDs: ["about.autoUpdate", "about.app"]),
+        // Agentic OS: the welcome tour's replay and the Sparkle update check are gone.
+        Group(page: .general, title: "Tours", itemIDs: ["general.settingsTour"]),
+        Group(page: .general, title: "About", itemIDs: ["about.app"]),
         Group(page: .general, title: "Help", itemIDs: ["about.source", "about.reportBug"]),
     ]
 

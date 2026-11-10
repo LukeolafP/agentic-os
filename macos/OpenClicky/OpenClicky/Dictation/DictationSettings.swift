@@ -232,7 +232,11 @@ final class DictationSettings: ObservableObject {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        engine = DictationEngineChoice(rawValue: defaults.string(forKey: Keys.engine) ?? "") ?? .offline
+        var storedEngine = DictationEngineChoice(rawValue: defaults.string(forKey: Keys.engine) ?? "") ?? .offline
+        // Agentic OS: the hosted engines (Sarvam, AssemblyAI, the OpenAI upload) are no longer
+        // offered; a Mac that had one picked hears on this Mac instead.
+        if !storedEngine.isOnDevice { storedEngine = .offline }
+        engine = storedEngine
         languageCode = defaults.string(forKey: Keys.language) ?? DictationLanguage.auto.code
         script = DictationScript(rawValue: defaults.string(forKey: Keys.script) ?? "") ?? .native
         // On from the first take (a fresh install has nothing stored): a take is cleaned up by
