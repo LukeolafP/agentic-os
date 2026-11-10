@@ -88,6 +88,13 @@ enum DictationEngineResolver {
     /// own OpenAI, Anthropic, Groq, Gemini, Mistral, OpenRouter or xAI key, else the backend with
     /// an account, else none.
     static func makePolisher() -> (any TakePolisher)? {
+        // Agentic OS: on Petra's backend on this Mac, FreeFlow cleans takes up first; the polisher
+        // below still does edits and the rest.
+        if OpenClickyConfiguration.backendIsLocal { return LocalHTTPTakePolisher(fallback: makeModelPolisher()) }
+        return makeModelPolisher()
+    }
+
+    private static func makeModelPolisher() -> (any TakePolisher)? {
         // Apple's on-device model first: free, private and already on the Mac where it exists.
         #if canImport(FoundationModels)
         if #available(macOS 26, *), AppleModelTakePolisherAvailability.isAvailable(languageCode: DictationSettings.storedLanguage().code) {
@@ -770,6 +777,11 @@ final class DictationTakeController: ObservableObject {
             let formatted = await TakeFormatter.format(raw, context: context, polisher: polisher, wantsModel: DictationEngineResolver.wantsModelPolish(settings: settings))
             outputText = formatted.text
             formattingDegraded = formatted.formattingDegraded
+            // Agentic OS: FreeFlow answered "": nothing to paste.
+            if outputText.isEmpty, polisher is LocalHTTPTakePolisher, isCurrent(thisTakeID) {
+                cancelTake(reason: "nothing to paste")
+                return
+            }
         }
         // Cancelled, or another take began, while the model was at work: these words are dropped.
         guard isCurrent(thisTakeID) else {

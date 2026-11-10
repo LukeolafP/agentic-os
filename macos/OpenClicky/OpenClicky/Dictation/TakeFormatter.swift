@@ -53,6 +53,13 @@ enum TakeFormatter {
     /// The clean-up must not hold a take up: Sarvam answers in 0.3–1 s, so after 3 s the words go
     /// in as they are (a slow connection never makes the person wait).
     static let modelTimeoutSeconds: TimeInterval = 3
+    /// Agentic OS: FreeFlow on Petra's backend (`LocalHTTPTakePolisher`) runs a bigger model on this
+    /// Mac and reads where the words go; it gets longer before the local result is pasted.
+    static let localHTTPModelTimeoutSeconds: TimeInterval = 8
+
+    static func modelTimeoutSeconds(for polisher: any TakePolisher) -> TimeInterval {
+        polisher is LocalHTTPTakePolisher ? localHTTPModelTimeoutSeconds : modelTimeoutSeconds
+    }
 
     /// Only the unmistakable ones: "ah", "er", "eh" and "mm" are words in romanised Indian languages.
     static let fillers: Set<String> = ["um", "umm", "uh", "uhh", "erm", "hmm"]
@@ -160,8 +167,12 @@ enum TakeFormatter {
         }
         let system = systemPrompt(for: context)
         do {
-            let polished = try await withTimeout(seconds: modelTimeoutSeconds) {
+            let polished = try await withTimeout(seconds: modelTimeoutSeconds(for: polisher)) {
                 try await polisher.polishTake(system: system, take: raw)
+            }
+            // FreeFlow decides what is pasted, a rewrite or a command included; "" pastes nothing.
+            if polisher is LocalHTTPTakePolisher {
+                return FormattedTake(text: polished.trimmingCharacters(in: .whitespacesAndNewlines), expandedShortcut: nil, formattingDegraded: false)
             }
             let cleaned = unwrapModelAnswer(polished)
             guard !cleaned.isEmpty, looksLikeTheSameTake(cleaned, raw: raw) else {
