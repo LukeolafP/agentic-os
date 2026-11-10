@@ -11,6 +11,11 @@
 //    move {x,y,label} | click {x,y,button,count,label} | drag {x,y,toX,toY,label}
 //    scroll {x,y,dx,dy} | type {text} | key {keys: "cmd+shift+k"}
 //
+//    Background hands (11 Nov 2026), inside one app window without the real mouse, outlined in cyan:
+//    target {app, window} | target {clear} | window_tree {maxItems} | press {i} | set_value {i, value}
+//    focus {i} | keys_to_app {keys} | type_to_app {text} | click_to_app {x, y, button, count}
+//    mark {x, y, label}
+//
 //  Coordinates are global screen points, top-left of the main display at 0,0. Before each click,
 //  drag or move the companion's own pointer flies to the spot with the label in its bubble, so
 //  Luke sees where the agent is going; then the real mouse acts. The island says which agent is
@@ -33,6 +38,20 @@ nonisolated final class AgenticOSHands: @unchecked Sendable {
     private var busyWho = ""
     private var ownKeyAt: Double = 0
     private var escMonitor: Any?
+
+    /// Background hands: the window the agent works in, and the elements of its last window_tree.
+    private struct Target {
+        let pid: pid_t
+        let app: String
+        let window: AXUIElement
+        let title: String
+    }
+    private let targetLock = NSLock()
+    private var target: Target?
+    private var elements: [AXUIElement] = []
+    private var followTimer: DispatchSourceTimer?
+    /// False after `busy {on:false}` or a window that went away: the outline stays hidden until the next `target`.
+    private var outlineShown = false
 
     @MainActor func start(companion: CompanionManager) {
         self.companion = companion
@@ -101,7 +120,8 @@ nonisolated final class AgenticOSHands: @unchecked Sendable {
         if let fallback { return fallback }
         throw Failure("missing \(key)")
     }
-    private let actions: Set<String> = ["move", "click", "drag", "scroll", "type", "key"]
+    private let actions: Set<String> = ["move", "click", "drag", "scroll", "type", "key",
+                                        "target", "window_tree", "press", "set_value", "focus", "keys_to_app", "type_to_app", "click_to_app"]
 
     private func run(_ command: String, _ request: [String: Any]) throws -> [String: Any] {
         if actions.contains(command) {
@@ -111,7 +131,8 @@ nonisolated final class AgenticOSHands: @unchecked Sendable {
         let label = (request["label"] as? String).flatMap { $0.isEmpty ? nil : $0 }
         switch command {
         case "status":
-            return ["screen": CGPreflightScreenCaptureAccess(), "accessibility": AXIsProcessTrusted(), "displays": displays(), "busy": busyWho, "app": "Agentic OS"]
+            return ["screen": CGPreflightScreenCaptureAccess(), "accessibility": AXIsProcessTrusted(), "displays": displays(), "busy": busyWho, "app": "Agentic OS",
+                    "target": targetDescription() ?? NSNull()]
         case "displays":
             return ["displays": displays()]
         case "busy":
@@ -169,6 +190,48 @@ nonisolated final class AgenticOSHands: @unchecked Sendable {
             guard let keys = request["keys"] as? String else { throw Failure("missing keys") }
             try pressKeys(keys)
             return [:]
+        // Background hands: inside the target window, without the real mouse.
+        case "target":
+            if (request["clear"] as? Bool) == true { clearTarget(); return [:] }
+            guard let app = request["app"] as? String, !app.isEmpty else { throw Failure("missing app") }
+            return try setTarget(app: app, windowTitle: request["window"] as? String)
+        case "window_tree":
+            return try windowTree(maxItems: Int(try number(request, "maxItems", 400)))
+        case "press":
+            let element = try element(request)
+            try press(element)
+            if let frame = frame(of: element) { mark(CGPoint(x: frame.midX, y: frame.midY), label: label ?? title(of: element)) }
+            return ["frame": frameJSON(frame(of: element))]
+        case "set_value":
+            let element = try element(request)
+            guard let value = request["value"] as? String else { throw Failure("missing value") }
+            AXUIElementSetAttributeValue(element, kAXFocusedAttribute as CFString, kCFBooleanTrue)
+            let result = AXUIElementSetAttributeValue(element, kAXValueAttribute as CFString, value as CFString)
+            guard result == .success else { throw Failure("couldn't set the value (AXError \(result.rawValue))") }
+            return ["value": valueString(of: element) ?? ""]
+        case "focus":
+            let element = try element(request)
+            let result = AXUIElementSetAttributeValue(element, kAXFocusedAttribute as CFString, kCFBooleanTrue)
+            guard result == .success else { throw Failure("couldn't focus it (AXError \(result.rawValue))") }
+            return [:]
+        case "keys_to_app":
+            guard let keys = request["keys"] as? String else { throw Failure("missing keys") }
+            try pressKeys(keys, pid: try targetPID())
+            return [:]
+        case "type_to_app":
+            guard let text = request["text"] as? String else { throw Failure("missing text") }
+            typeText(text, pid: try targetPID())
+            return [:]
+        case "click_to_app":
+            let point = try self.point(request)
+            let button: CGMouseButton = (request["button"] as? String) == "right" ? .right : .left
+            let count = max(1, min(Int(try number(request, "count", 1)), 3))
+            try clickInApp(at: point, button: button, count: count, pid: try targetPID())
+            mark(point, label: label)
+            return [:]
+        case "mark":
+            mark(try self.point(request), label: label)
+            return [:]
         default:
             throw Failure("unknown command \(command)")
         }
@@ -190,10 +253,293 @@ nonisolated final class AgenticOSHands: @unchecked Sendable {
 
     private func setBusy(_ on: Bool, _ who: String) {
         busyWho = on ? who : ""
+        if !on { outlineShown = false }
         DispatchQueue.main.async { MainActor.assumeIsolated {
             self.companion?.agentActivityText = on ? "\(who) is using your Mac · Esc stops it" : nil
-            if !on { self.companion?.clearDetectedElementLocation() }
+            if !on {
+                self.companion?.clearDetectedElementLocation()
+                AgenticOSOutline.shared.hide()
+            } else if self.target != nil {
+                AgenticOSOutline.shared.setLabel(who)
+            }
         } }
+    }
+
+    // MARK: background hands: the target window
+
+    private func targetPID() throws -> pid_t {
+        guard let target else { throw Failure("no target app") }
+        return target.pid
+    }
+
+    private func targetDescription() -> [String: Any]? {
+        guard let target else { return nil }
+        return ["app": target.app, "window": target.title, "frame": frameJSON(frame(of: target.window)), "pid": Int(target.pid)]
+    }
+
+    private func frameJSON(_ frame: CGRect?) -> Any {
+        guard let frame else { return NSNull() }
+        return ["x": Double(frame.minX), "y": Double(frame.minY), "w": Double(frame.width), "h": Double(frame.height)]
+    }
+
+    /// Finds the app (opening it when it is not running), picks its window, outlines it.
+    private func setTarget(app name: String, windowTitle: String?) throws -> [String: Any] {
+        func running() -> NSRunningApplication? {
+            let wanted = name.lowercased()
+            return NSWorkspace.shared.runningApplications.first {
+                $0.bundleIdentifier?.lowercased() == wanted || $0.localizedName?.lowercased() == wanted
+            } ?? NSWorkspace.shared.runningApplications.first {
+                ($0.localizedName?.lowercased().hasPrefix(wanted) ?? false) && $0.activationPolicy == .regular
+            }
+        }
+        var app = DispatchQueue.main.sync { MainActor.assumeIsolated { running() } }
+        if app == nil {
+            let open = Process()
+            open.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+            open.arguments = ["-a", name, "--background"]
+            try? open.run(); open.waitUntilExit()
+            let deadline = Date().addingTimeInterval(8)
+            while app == nil, Date() < deadline {
+                usleep(250_000)
+                app = DispatchQueue.main.sync { MainActor.assumeIsolated { running() } }
+            }
+        }
+        guard let app else { throw Failure("no app called \(name)") }
+        let pid = app.processIdentifier
+        let appName = app.localizedName ?? name
+        // Chromium and Electron apps only build their web tree once asked.
+        DispatchQueue.main.sync { MainActor.assumeIsolated { ChromiumAccessibility.wake(app) } }
+        let application = AXUIElementCreateApplication(pid)
+        AXUIElementSetMessagingTimeout(application, 2)
+        var window: AXUIElement?
+        let deadline = Date().addingTimeInterval(windowTitle == nil ? 3 : 8)
+        repeat {
+            window = pickWindow(of: application, titled: windowTitle)
+            if window == nil { usleep(300_000) }
+        } while window == nil && Date() < deadline
+        guard let window else { throw Failure(windowTitle.map { "\(appName) has no window titled \"\($0)\"" } ?? "\(appName) has no window") }
+        AXUIElementSetMessagingTimeout(window, 2)
+        let title = string(of: window, kAXTitleAttribute) ?? ""
+        targetLock.lock()
+        target = Target(pid: pid, app: appName, window: window, title: title)
+        elements = []
+        targetLock.unlock()
+        outlineShown = true
+        let frame = frame(of: window)
+        showOutline(frame)
+        startFollowing()
+        AppLog.append("screen agent: target \(appName) · \(title)")
+        return ["pid": Int(pid), "app": appName, "window": title, "frame": frameJSON(frame)]
+    }
+
+    private func pickWindow(of application: AXUIElement, titled wanted: String?) -> AXUIElement? {
+        var windows: [AXUIElement] = []
+        if let list = copy(application, kAXWindowsAttribute) as? [AXUIElement] { windows = list }
+        if let focused = copy(application, kAXFocusedWindowAttribute), CFGetTypeID(focused) == AXUIElementGetTypeID() {
+            windows.insert(focused as! AXUIElement, at: 0)
+        }
+        if let wanted, !wanted.isEmpty {
+            let needle = wanted.lowercased()
+            return windows.first { (string(of: $0, kAXTitleAttribute) ?? "").lowercased().contains(needle) }
+        }
+        // The front window: the focused one, else the first standard window with a size.
+        return windows.first { (frame(of: $0)?.width ?? 0) > 0 } ?? windows.first
+    }
+
+    private func clearTarget() {
+        followTimer?.cancel()
+        followTimer = nil
+        targetLock.lock()
+        target = nil
+        elements = []
+        targetLock.unlock()
+        outlineShown = false
+        DispatchQueue.main.async { MainActor.assumeIsolated { AgenticOSOutline.shared.hide() } }
+        AppLog.append("screen agent: target cleared")
+    }
+
+    private func showOutline(_ frame: CGRect?) {
+        let label = busyWho.isEmpty ? "Screen agent · \(target?.app ?? "")" : busyWho
+        DispatchQueue.main.async { MainActor.assumeIsolated {
+            if let frame { AgenticOSOutline.shared.show(frame: frame, label: label) } else { AgenticOSOutline.shared.hide() }
+        } }
+    }
+
+    /// Every 100 ms, on its own queue: the window's frame goes to the outline; a window that is
+    /// gone hides it.
+    private func startFollowing() {
+        followTimer?.cancel()
+        let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.global(qos: .utility))
+        timer.schedule(deadline: .now() + .milliseconds(100), repeating: .milliseconds(100))
+        timer.setEventHandler { [weak self] in
+            guard let self, let target = self.target else { return }
+            guard self.outlineShown else { return }
+            if let frame = self.frame(of: target.window), frame.width > 0 {
+                if frame != AgenticOSOutlineFrameCache.last {
+                    AgenticOSOutlineFrameCache.last = frame
+                    self.showOutline(frame)
+                }
+            } else {
+                self.outlineShown = false
+                AgenticOSOutlineFrameCache.last = nil
+                self.showOutline(nil)
+                AppLog.append("screen agent: the target window is gone")
+            }
+        }
+        AgenticOSOutlineFrameCache.last = nil
+        timer.resume()
+        followTimer = timer
+    }
+
+    private func mark(_ point: CGPoint, label: String?) {
+        DispatchQueue.main.async { MainActor.assumeIsolated { AgenticOSOutline.shared.pulse(at: point, label: label) } }
+    }
+
+    // MARK: background hands: the window's tree
+
+    private static let roleNames: [String: String] = [
+        kAXButtonRole: "button", "AXLink": "link",
+        kAXTextFieldRole: "field", kAXTextAreaRole: "field", "AXSearchField": "field", kAXComboBoxRole: "field",
+        kAXCheckBoxRole: "checkbox", kAXRadioButtonRole: "radio",
+        kAXMenuRole: "menu", kAXMenuItemRole: "menu", kAXMenuBarItemRole: "menu", kAXMenuButtonRole: "menubutton",
+        kAXPopUpButtonRole: "popup", kAXTabGroupRole: "tab", kAXListRole: "list", kAXRowRole: "row", kAXCellRole: "cell",
+        kAXTableRole: "table", kAXOutlineRole: "outline", kAXSliderRole: "slider", kAXIncrementorRole: "slider",
+        kAXImageRole: "image", kAXStaticTextRole: "text", kAXGroupRole: "group", kAXScrollAreaRole: "scroll",
+        kAXToolbarRole: "toolbar", kAXWindowRole: "window",
+    ]
+    private static let actionNames: [String: String] = [
+        kAXPressAction: "press", "AXOpen": "open", kAXConfirmAction: "confirm", kAXShowMenuAction: "show-menu",
+        kAXIncrementAction: "increment", kAXDecrementAction: "decrement",
+    ]
+    /// Containers that are only listed when they have a title of their own.
+    private static let quietRoles: Set<String> = ["group", "other", "scroll", "list", "table", "outline", "toolbar", "row", "cell"]
+
+    private func windowTree(maxItems: Int) throws -> [String: Any] {
+        guard let target else { throw Failure("no target app") }
+        var items: [[String: Any]] = []
+        var found: [AXUIElement] = []
+        var visited = 0
+        // Depth first; a quiet container with no title is left out, its children still listed.
+        func visit(_ element: AXUIElement) {
+            guard items.count < maxItems, visited < 6000 else { return }
+            visited += 1
+            AXUIElementSetMessagingTimeout(element, 2)
+            let role = roleName(of: element)
+            let title = self.title(of: element) ?? ""
+            let frame = frame(of: element)
+            let listed = !(Self.quietRoles.contains(role) && title.isEmpty) && (frame?.width ?? 0) > 0 && (frame?.height ?? 0) > 0
+            if listed {
+                var item: [String: Any] = [
+                    "i": found.count, "role": role, "title": String(title.prefix(200)), "frame": frameJSON(frame),
+                    "enabled": (copy(element, kAXEnabledAttribute) as? Bool) ?? true,
+                    "focused": (copy(element, kAXFocusedAttribute) as? Bool) ?? false,
+                    "actions": actions(of: element),
+                ]
+                item["value"] = ["field", "checkbox", "radio", "slider", "popup", "tab"].contains(role) ? (valueString(of: element) ?? "") : ""
+                items.append(item)
+                found.append(element)
+            }
+            for child in children(of: element) { visit(child) }
+        }
+        visit(target.window)
+        targetLock.lock()
+        elements = found
+        targetLock.unlock()
+        return ["items": items, "count": items.count, "window": target.title]
+    }
+
+    private func element(_ request: [String: Any]) throws -> AXUIElement {
+        let index = Int(try number(request, "i"))
+        targetLock.lock(); defer { targetLock.unlock() }
+        guard target != nil else { throw Failure("no target app") }
+        guard index >= 0, index < elements.count else { throw Failure(elements.isEmpty ? "no window_tree yet" : "no element \(index); the tree has \(elements.count)") }
+        return elements[index]
+    }
+
+    private func press(_ element: AXUIElement) throws {
+        let available = actions(of: element)
+        let name = ["press", "open", "confirm"].first { available.contains($0) } ?? "press"
+        let axName = Self.actionNames.first { $0.value == name }?.key ?? kAXPressAction
+        let result = AXUIElementPerformAction(element, axName as CFString)
+        guard result == .success else { throw Failure("\(name) failed (AXError \(result.rawValue))") }
+    }
+
+    private func copy(_ element: AXUIElement, _ attribute: String) -> AnyObject? {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(element, attribute as CFString, &value) == .success else { return nil }
+        return value
+    }
+    private func string(of element: AXUIElement, _ attribute: String) -> String? {
+        let value = copy(element, attribute)
+        if let text = value as? String { return text.isEmpty ? nil : text }
+        if let text = value as? NSAttributedString { return text.string.isEmpty ? nil : text.string }
+        return nil
+    }
+    private func title(of element: AXUIElement) -> String? {
+        string(of: element, kAXTitleAttribute) ?? string(of: element, kAXDescriptionAttribute)
+            ?? string(of: element, kAXHelpAttribute) ?? (roleName(of: element) == "text" ? string(of: element, kAXValueAttribute) : nil)
+    }
+    private func roleName(of element: AXUIElement) -> String {
+        if (string(of: element, kAXSubroleAttribute) ?? "") == "AXTabButton" { return "tab" }
+        guard let role = string(of: element, kAXRoleAttribute) else { return "other" }
+        return Self.roleNames[role] ?? "other"
+    }
+    private func valueString(of element: AXUIElement) -> String? {
+        guard let value = copy(element, kAXValueAttribute) else { return nil }
+        let text: String
+        if let string = value as? String { text = string }
+        else if let number = value as? NSNumber { text = number.stringValue }
+        else if let attributed = value as? NSAttributedString { text = attributed.string }
+        else { text = "\(value)" }
+        return String(text.prefix(200))
+    }
+    private func actions(of element: AXUIElement) -> [String] {
+        var names: CFArray?
+        guard AXUIElementCopyActionNames(element, &names) == .success, let list = names as? [String] else { return [] }
+        return list.compactMap { Self.actionNames[$0] }
+    }
+    private func children(of element: AXUIElement) -> [AXUIElement] {
+        (copy(element, kAXChildrenAttribute) as? [AXUIElement]) ?? []
+    }
+    /// The element's frame in global top-left points (what AX reports).
+    private func frame(of element: AXUIElement) -> CGRect? {
+        guard let positionValue = copy(element, kAXPositionAttribute), let sizeValue = copy(element, kAXSizeAttribute) else { return nil }
+        var position = CGPoint.zero, size = CGSize.zero
+        guard AXValueGetValue(positionValue as! AXValue, .cgPoint, &position), AXValueGetValue(sizeValue as! AXValue, .cgSize, &size) else { return nil }
+        return CGRect(origin: position, size: size)
+    }
+
+    // MARK: background hands: events to the app
+
+    /// A click posted to the app's process at a global point: the real cursor stays where it is.
+    private func clickInApp(at point: CGPoint, button: CGMouseButton, count: Int, pid: pid_t) throws {
+        let windowNumber = windowNumber(of: pid, containing: point)
+        func send(_ type: CGEventType, clicks: Int) {
+            guard let event = CGEvent(mouseEventSource: nil, mouseType: type, mouseCursorPosition: point, mouseButton: button) else { return }
+            event.setIntegerValueField(.mouseEventClickState, value: Int64(clicks))
+            if let windowNumber {
+                event.setIntegerValueField(.mouseEventWindowUnderMousePointer, value: Int64(windowNumber))
+                event.setIntegerValueField(.mouseEventWindowUnderMousePointerThatCanHandleThisEvent, value: Int64(windowNumber))
+            }
+            event.postToPid(pid)
+        }
+        send(.mouseMoved, clicks: 0)
+        usleep(30_000)
+        for clickNumber in 1...count {
+            send(button == .right ? .rightMouseDown : .leftMouseDown, clicks: clickNumber); usleep(30_000)
+            send(button == .right ? .rightMouseUp : .leftMouseUp, clicks: clickNumber); usleep(60_000)
+        }
+    }
+
+    /// The on-screen window of `pid` under `point` (global top-left points), by the window server's list.
+    private func windowNumber(of pid: pid_t, containing point: CGPoint) -> Int? {
+        guard let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] else { return nil }
+        let own = list.filter { ($0[kCGWindowOwnerPID as String] as? Int) == Int(pid) && ($0[kCGWindowLayer as String] as? Int) == 0 }
+        let containing = own.first { entry in
+            guard let bounds = entry[kCGWindowBounds as String] as? [String: Double] else { return false }
+            return CGRect(x: bounds["X"] ?? 0, y: bounds["Y"] ?? 0, width: bounds["Width"] ?? 0, height: bounds["Height"] ?? 0).contains(point)
+        }
+        return (containing ?? own.first)?[kCGWindowNumber as String] as? Int
     }
 
     private func point(_ request: [String: Any]) throws -> CGPoint { CGPoint(x: try number(request, "x"), y: try number(request, "y")) }
@@ -257,24 +603,24 @@ nonisolated final class AgenticOSHands: @unchecked Sendable {
 
     // MARK: the keyboard
 
-    private func typeText(_ text: String) {
+    private func typeText(_ text: String, pid: pid_t? = nil) {
         let units = Array(text.utf16)
         var index = 0
         while index < units.count {
             let chunk = Array(units[index..<min(index + 16, units.count)])
-            if chunk.count >= 1 && (chunk[0] == 10 || chunk[0] == 13) { tap(36, []); index += 1; continue }
+            if chunk.count >= 1 && (chunk[0] == 10 || chunk[0] == 13) { tap(36, [], pid: pid); index += 1; continue }
             if let newline = chunk.firstIndex(where: { $0 == 10 || $0 == 13 }) {
-                sendUnicode(Array(chunk[0..<newline])); index += newline; continue
+                sendUnicode(Array(chunk[0..<newline]), pid: pid); index += newline; continue
             }
-            sendUnicode(chunk); index += chunk.count
+            sendUnicode(chunk, pid: pid); index += chunk.count
         }
     }
-    private func sendUnicode(_ chunk: [UniChar]) {
+    private func sendUnicode(_ chunk: [UniChar], pid: pid_t? = nil) {
         var characters = chunk
         for down in [true, false] {
             guard let event = CGEvent(keyboardEventSource: nil, virtualKey: 0, keyDown: down) else { continue }
             event.keyboardSetUnicodeString(stringLength: characters.count, unicodeString: &characters)
-            event.post(tap: .cghidEventTap)
+            deliver(event, to: pid)
             usleep(8_000)
         }
         usleep(12_000)
@@ -289,7 +635,7 @@ nonisolated final class AgenticOSHands: @unchecked Sendable {
         "left": 123, "right": 124, "down": 125, "up": 126,
         "f1": 122, "f2": 120, "f3": 99, "f4": 118, "f5": 96, "f6": 97, "f7": 98, "f8": 100, "f9": 101, "f10": 109, "f11": 103, "f12": 111,
     ]
-    private func pressKeys(_ combo: String) throws {
+    private func pressKeys(_ combo: String, pid: pid_t? = nil) throws {
         for step in combo.split(separator: " ") {
             var flags: CGEventFlags = []
             var key: CGKeyCode?
@@ -306,17 +652,26 @@ nonisolated final class AgenticOSHands: @unchecked Sendable {
                 }
             }
             guard let key else { throw Failure("no key in \(step)") }
-            tap(key, flags)
+            tap(key, flags, pid: pid)
             usleep(80_000)
         }
     }
-    private func tap(_ key: CGKeyCode, _ flags: CGEventFlags) {
+    private func tap(_ key: CGKeyCode, _ flags: CGEventFlags, pid: pid_t? = nil) {
         ownKeyAt = Date().timeIntervalSince1970
         for down in [true, false] {
             guard let event = CGEvent(keyboardEventSource: nil, virtualKey: key, keyDown: down) else { continue }
             event.flags = flags
-            event.post(tap: .cghidEventTap)
+            deliver(event, to: pid)
             usleep(20_000)
         }
     }
+    /// To the app's process when the background hands have a target, else to the HID tap like a real key.
+    private func deliver(_ event: CGEvent, to pid: pid_t?) {
+        if let pid { event.postToPid(pid) } else { event.post(tap: .cghidEventTap) }
+    }
+}
+
+/// The last frame the outline was given, so the follow timer only redraws on a change.
+private enum AgenticOSOutlineFrameCache {
+    nonisolated(unsafe) static var last: CGRect?
 }
