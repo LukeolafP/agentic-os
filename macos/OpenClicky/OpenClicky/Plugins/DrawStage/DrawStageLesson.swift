@@ -187,9 +187,9 @@ enum DrawStageLesson {
     static func fastVoiceNote(question: String, spokenLines: [String]) -> String {
         let said = spokenLines.joined(separator: " ")
         if said.isEmpty {
-            return "To \"\(question)\" OpenClicky started a drawing on the screen, but it was stopped before anything was said. Do not repeat the question's answer unless asked again."
+            return "To \"\(question)\" Agentic OS started a drawing on the screen, but it was stopped before anything was said. Do not repeat the question's answer unless asked again."
         }
-        return "To \"\(question)\" OpenClicky answered by drawing on the screen and said: \(said) The drawing is on the screen (or in its bubble). Do not repeat it; the next question may be about it."
+        return "To \"\(question)\" Agentic OS answered by drawing on the screen and said: \(said) The drawing is on the screen (or in its bubble). Do not repeat it; the next question may be about it."
     }
 
     /// The highest step(n) in a program, 0 when it has none.

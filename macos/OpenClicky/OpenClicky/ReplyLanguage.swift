@@ -66,7 +66,7 @@ enum ReplyLanguage {
         return """
         Always speak and write in \(name). Every reply is in \(name): whatever language the user \
         seems to use, whatever language the transcript shows, and whatever language any earlier \
-        reply in this conversation was in. Only the user changes this, in OpenClicky's settings. \
+        reply in this conversation was in. Only the user changes this, in Agentic OS's settings. \
         If a turn is silent, only noise, or too short to make out, do not invent what was said: \
         say in \(name) that you did not catch that and ask them to say it again.
         """

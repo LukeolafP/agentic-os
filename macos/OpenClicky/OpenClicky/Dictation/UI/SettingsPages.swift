@@ -37,7 +37,7 @@ enum DictationSettingsPage: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .dictation: return "Dictation"
-        case .clicky: return "Clicky"
+        case .clicky: return "Voice Agent"
         case .island: return "Island"
         case .account: return "Keys & Account"
         case .privacy: return "Privacy"
@@ -59,7 +59,7 @@ enum DictationSettingsPage: String, CaseIterable, Identifiable {
         case .clicky: return "Hold ⌃⌥ and ask about what’s on screen."
         case .island: return "What lives around the notch."
         case .account: return "Your own keys come first. An account is optional."
-        case .privacy: return "What OpenClicky can see, and what it keeps."
+        case .privacy: return "What Agentic OS can see, and what it keeps."
         case .general: return "Startup, appearance and updates."
         case .orb: return "The small narrator that shows while you dictate."
         case .calendars: return "Which calendars the island shows."

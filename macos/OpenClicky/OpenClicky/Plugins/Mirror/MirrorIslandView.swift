@@ -34,7 +34,7 @@ enum MirrorPermissionNote {
     static func text(for status: AVAuthorizationStatus) -> String? {
         switch status {
         case .authorized, .notDetermined: return nil
-        case .denied: return "Camera access is off for OpenClicky. Turn it on in System Settings › Privacy & Security › Camera."
+        case .denied: return "Camera access is off for Agentic OS. Turn it on in System Settings › Privacy & Security › Camera."
         case .restricted: return "The camera is not allowed on this Mac."
         @unknown default: return "The camera is not available."
         }

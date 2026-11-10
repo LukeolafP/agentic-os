@@ -39,15 +39,15 @@ extension SettingsCatalog {
                 view: AnyView(OnThisMacRow(settings: settings))),
             SettingsItem(
                 id: "clicky.pointer",
-                title: "Show the pointer", detail: "It flies to what Clicky means.",
+                title: "Show the pointer", detail: "It flies to what the Voice Agent means.",
                 keywords: ["pointer", "cursor", "buddy", "orange", "visible", "hide", "always", "while the mouse moves", "after a shake", "shake", "while i talk"],
                 view: AnyView(PointerShowsRow(companionManager: companionManager))),
             SettingsItem(
                 id: "clicky.agentMode",
-                title: "Agent mode", detail: "Clicky can hand work to Codex.",
+                title: "Agent mode", detail: "The Voice Agent can hand work to Codex.",
                 keywords: ["agent", "codex", "tasks", "automation"],
                 view: AnyView(CompanionSwitchRow(
-                    title: "Agent mode", detail: "Clicky can hand work to Codex.",
+                    title: "Agent mode", detail: "The Voice Agent can hand work to Codex.",
                     publisher: companionManager.$isAgentModeEnabled.eraseToAnyPublisher(),
                     initialValue: companionManager.isAgentModeEnabled,
                     set: { [companionManager] in companionManager.setAgentModeEnabled($0) }))),
@@ -66,7 +66,7 @@ extension SettingsCatalog {
         var items: [SettingsItem] = [
             SettingsItem(
                 id: "clicky.language",
-                title: "Language", detail: "Clicky speaks and listens in this.",
+                title: "Language", detail: "The Voice Agent speaks and listens in this.",
                 keywords: ["language", "english", "hindi", "tamil", "spanish", "french", "speak", "reply", "listen"],
                 view: AnyView(ReplyLanguageRow(settings: settings))),
             SettingsItem(
@@ -105,7 +105,7 @@ extension SettingsCatalog {
         if usesRealtime || OpenClickyConfiguration.isConfigured {
             let detail = usesRealtime
                 ? "Hands-free: just talk, no keys. Instant with fast voice on."
-                : "Hands-free: just talk, no keys. Clicky answers once you stop talking."
+                : "Hands-free: just talk, no keys. The Voice Agent answers once you stop talking."
             items.append(SettingsItem(
                 id: "clicky.alwaysListening",
                 title: "Always listening", detail: detail,
@@ -119,9 +119,9 @@ extension SettingsCatalog {
         if !usesRealtime {
             items.append(SettingsItem(
                 id: "clicky.fastVoiceNeedsKey",
-                title: "Fast voice", detail: "Instant replies need your own OpenAI or Gemini key. Without one, Clicky answers in the standard voice.",
+                title: "Fast voice", detail: "Instant replies need your own OpenAI or Gemini key. Without one, the Voice Agent answers in the standard voice.",
                 keywords: ["realtime", "voice", "fast", "hands-free", "always listening", "openai", "gemini", "key"],
-                view: AnyView(SettingsRow(title: "Fast voice", detail: "Instant replies need your own OpenAI or Gemini key. Without one, Clicky answers in the standard voice.") {
+                view: AnyView(SettingsRow(title: "Fast voice", detail: "Instant replies need your own OpenAI or Gemini key. Without one, the Voice Agent answers in the standard voice.") {
                     Button("Add Key…") { companionManager.showSettings(.account) }
                         .pointerCursor()
                 })))
@@ -258,10 +258,10 @@ enum PointerShowsChoice: String, CaseIterable, Identifiable {
     /// The pointer's line under the picker.
     var detail: String {
         switch self {
-        case .whileTalking: return "Appears when you ask and leaves once Clicky is done."
+        case .whileTalking: return "Appears when you ask and leaves once the Voice Agent is done."
         case .always: return "Follows the mouse everywhere."
         case .whileMoving: return "Fades a few seconds after the mouse rests."
-        case .onShake: return "Hidden until you shake, or until Clicky needs it."
+        case .onShake: return "Hidden until you shake, or until the Voice Agent needs it."
         }
     }
 
@@ -326,7 +326,7 @@ struct DrawToExplainRow: View {
     @ObservedObject var settings: DictationSettings
 
     static let title = "Draw to explain"
-    static let detail = "When a picture or a 3D model explains it better, Clicky draws on your screen while it talks. Ask \"how does a jet engine work?\" to see it."
+    static let detail = "When a picture or a 3D model explains it better, the Voice Agent draws on your screen while it talks. Ask \"how does a jet engine work?\" to see it."
 
     var body: some View {
         SettingsRow(title: Self.title, detail: Self.detail) {
@@ -480,7 +480,7 @@ private struct SpeechVoiceRows: View {
 
     /// The free voice and what is left of its allowance.
     private var freeVoiceSentence: String {
-        guard let summary = billing.summary, summary.isMetered, !summary.byok else { return "ElevenLabs, through OpenClicky." }
+        guard let summary = billing.summary, summary.isMetered, !summary.byok else { return "ElevenLabs, through Agentic OS." }
         if summary.isSwitchedOff { return "ElevenLabs, on the free credits, which are used up for now. This Mac’s voice works meanwhile." }
         // The voice has its own allowance in spoken characters, apart from the money one: it
         // can run out while most of the money is left.
@@ -602,7 +602,7 @@ private final class VoicePreview {
 
     func play(_ voice: SpeechVoiceChoice) {
         Task {
-            guard let data = try? await CloudVoiceSpeaker.audio(for: "hi, i'm clicky. this is how i sound.", voice: voice) else { return }
+            guard let data = try? await CloudVoiceSpeaker.audio(for: "hi, i'm your voice agent. this is how i sound.", voice: voice) else { return }
             player = try? AVAudioPlayer(data: data)
             player?.play()
         }
@@ -615,7 +615,7 @@ private struct ReplyLanguageRow: View {
     @State private var languageCode = ReplyLanguage.currentCode
 
     var body: some View {
-        SettingsRow(title: "Language", detail: "Clicky speaks and listens in this. Dictation has its own, on the Dictation page.") {
+        SettingsRow(title: "Language", detail: "The Voice Agent speaks and listens in this. Dictation has its own, on the Dictation page.") {
             Picker("", selection: Binding(
                 get: { languageCode },
                 set: { chosenCode in

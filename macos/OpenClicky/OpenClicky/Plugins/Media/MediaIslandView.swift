@@ -16,7 +16,7 @@ struct MediaIslandComponent: IslandComponent {
     let symbolName = "music.note"
     let preferredHeight: CGFloat = 84
     let isPlugin = true
-    let settingsDetail: String? = "Shows what Music or Spotify is playing, with artwork, progress and controls. macOS asks once per player to let OpenClicky control it."
+    let settingsDetail: String? = "Shows what Music or Spotify is playing, with artwork, progress and controls. macOS asks once per player to let Agentic OS control it."
     func isAvailable(in context: IslandContext) -> Bool { true }
     @MainActor func makeView(companionManager: CompanionManager, model: NotchHUDModel) -> AnyView {
         AnyView(MediaIslandView(media: companionManager.notchHUDManager.media))
@@ -28,7 +28,7 @@ struct MediaIslandView: View {
 
     /// The empty state's second line when macOS refused the player.
     static func hint(refused player: MediaPlayer) -> String {
-        "allow openclicky to control \(player.displayName) in system settings → privacy & security → automation"
+        "allow agentic os to control \(player.displayName) in system settings → privacy & security → automation"
     }
 
     var body: some View {

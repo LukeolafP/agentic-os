@@ -62,9 +62,9 @@ enum PermissionStep: String, CaseIterable, Identifiable {
     /// The line once the request is out and we're waiting on the user in System Settings.
     var waitingDetail: String {
         switch self {
-        case .microphone: return "switch openclicky on in the microphone list."
+        case .microphone: return "switch agentic os on in the microphone list."
         case .accessibility: return "drag me into the accessibility list."
-        case .screenRecording: return "switch openclicky on (or drag me into the list), then quit & reopen."
+        case .screenRecording: return "switch agentic os on (or drag me into the list), then quit & reopen."
         case .screenContent: return "waiting for the capture panel…"
         }
     }
@@ -368,7 +368,7 @@ struct PermissionPromptView: View {
                     }
                     .buttonStyle(.plain)
                     .pointerCursor()
-                    .help("hide these cards until openclicky next opens")
+                    .help("hide these cards until agentic os next opens")
                 }
                 .fixedSize()
             }
@@ -386,7 +386,7 @@ struct PermissionPromptView: View {
                 }
                 .buttonStyle(.plain)
                 .pointerCursor()
-                .help("removes openclicky from the accessibility list and relaunches, so it can be granted again")
+                .help("removes agentic os from the accessibility list and relaunches, so it can be granted again")
                 .padding(.leading, DS.HUD.tileSize + 14)
             }
         }

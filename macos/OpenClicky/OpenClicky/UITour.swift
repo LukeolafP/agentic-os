@@ -134,7 +134,7 @@ final class UITour {
         let cards: [(String, FirstRunTourStep, String?, Bool)] = [
             ("01-meet", .meet, nil, false),
             ("02-dictate", .dictate, nil, false),
-            ("03-dictate-heard", .dictate, "✓ heard you: “hello openclicky, this is my first take”", true),
+            ("03-dictate-heard", .dictate, "✓ heard you: “hello agentic os, this is my first take”", true),
             ("04-dictate-nothing", .dictate, "didn’t catch any words. try again, or pick another microphone.", false),
             ("05-talk", .talk, nil, false),
             ("06-act", .act, nil, false),
@@ -201,7 +201,7 @@ final class UITour {
             hud.shelf.removeAll()
             // Two coding sessions, one live, for the Coding agents component.
             hud.debugSetAgentSessions([
-                AgentSession(id: "demo-claude", agent: .claudeCode, project: "openclicky", title: nil, activity: .tool(name: "Edit", detail: "Hero.swift"), lastEventAt: Date()),
+                AgentSession(id: "demo-claude", agent: .claudeCode, project: "agentic os", title: nil, activity: .tool(name: "Edit", detail: "Hero.swift"), lastEventAt: Date()),
                 AgentSession(id: "demo-codex", agent: .codex, project: "site", title: nil, activity: .idle, lastEventAt: Date().addingTimeInterval(-180)),
             ])
             hud.debugShowPrimaryComponent(IslandPluginRegistry.agentsID)

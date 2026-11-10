@@ -48,7 +48,7 @@ enum MacActionLocation: String, CaseIterable {
         case .desktop: return "your Desktop"
         case .downloads: return "your Downloads folder"
         case .documents: return "your Documents folder"
-        case .workspace: return "your OpenClicky folder"
+        case .workspace: return "your Agentic OS folder"
         case .home: return "your home folder"
         }
     }
@@ -248,7 +248,7 @@ enum MacActionOutcome: Equatable {
             return "Here's your inbox."
         case .mailUnavailable(let error):
             return error == .notAllowed
-                ? "macOS didn't let me control Mail. Allow OpenClicky under System Settings, Privacy & Security, Automation. I opened Mail instead."
+                ? "macOS didn't let me control Mail. Allow Agentic OS under System Settings, Privacy & Security, Automation. I opened Mail instead."
                 : "I couldn't read Mail in time, so I opened it instead."
         case .draftedEmail(_, let recipient, _):
             return "Drafted an email to \(recipient); it's open for you to check. I don't send email — you do."
@@ -267,7 +267,7 @@ enum MacActionOutcome: Equatable {
         case .mailDraftFailed(let error):
             switch error {
             case .failed(let reason): return "Mail couldn't make the draft: \(reason)."
-            case .notAllowed: return "macOS didn't let me control Mail. Allow OpenClicky under System Settings, Privacy & Security, Automation."
+            case .notAllowed: return "macOS didn't let me control Mail. Allow Agentic OS under System Settings, Privacy & Security, Automation."
             case .timedOut: return "Mail didn't answer in time."
             case .recipientNotFilled: return "The draft is open, but I couldn't fill in the recipient; add it yourself."
             }
@@ -325,7 +325,7 @@ enum MacActionOutcome: Equatable {
         case .noSuchTab:
             return "I couldn't find that tab."
         case .browserNotAllowed:
-            return "macOS didn't let me control the browser. Allow OpenClicky under System Settings, Privacy & Security, Automation."
+            return "macOS didn't let me control the browser. Allow Agentic OS under System Settings, Privacy & Security, Automation."
         case .failed(let reason):
             return "That didn't work: \(reason)."
         }
@@ -870,7 +870,7 @@ extension MacAction {
         let locationProperty: [String: Any] = [
             "type": "string",
             "enum": locations,
-            "description": "Which folder. Leave it out for OpenClicky's own workspace folder.",
+            "description": "Which folder. Leave it out for Agentic OS's own workspace folder.",
         ]
         return [
             [

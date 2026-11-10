@@ -61,7 +61,7 @@ final class CalendarStore: ObservableObject {
         var errorDescription: String? {
             switch self {
             case .emptyTitle: return "Give the event a name first."
-            case .noAccess: return "OpenClicky needs calendar access to add events."
+            case .noAccess: return "Agentic OS needs calendar access to add events."
             case .noWritableCalendar: return "None of your calendars can take new events."
             case .saveFailed(let reason): return "Calendar did not save it: \(reason)"
             }

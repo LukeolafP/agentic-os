@@ -81,7 +81,7 @@ final class OpenClickyAuthSession: ObservableObject {
         }
     }
 
-    nonisolated static let unreachableMessage = "couldn't reach openclicky right now, try again in a minute."
+    nonisolated static let unreachableMessage = "couldn't reach agentic os right now, try again in a minute."
 
     nonisolated struct Session: Decodable, Equatable { let access_token: String; let refresh_token: String; let expires_in: Double }
     nonisolated enum StartOutcome: Equatable { case signedIn(Session, confirmed: Bool), codeSent, failed(String) }
@@ -113,7 +113,7 @@ final class OpenClickyAuthSession: ObservableObject {
     }
 
     nonisolated static let badCodeMessage = "that code didn't work. check it, or ask for a new one."
-    nonisolated static let accountsUnavailableMessage = "openclicky's accounts are having trouble right now, try again in a few minutes."
+    nonisolated static let accountsUnavailableMessage = "agentic os's accounts are having trouble right now, try again in a few minutes."
 
     /// "wait about 3 minutes" when the backend said how long (Retry-After, in seconds).
     nonisolated static func slowDownMessage(retryAfterSeconds: Int?) -> String {
@@ -569,7 +569,7 @@ final class OpenClickyAuthSession: ObservableObject {
     }
 
     nonisolated static let askAgainSentence = "please ask that again."
-    nonisolated static let spokenSignInExpiredSentence = "your openclicky sign-in has expired. sign in again in settings, account."
+    nonisolated static let spokenSignInExpiredSentence = "your agentic os sign-in has expired. sign in again in settings, account."
     nonisolated static let ownKeyRefusedSentence = "your own api key was refused. check it in settings, keys & plans."
 
     nonisolated static func spokenSentence(after outcome: RejectionOutcome) -> String {

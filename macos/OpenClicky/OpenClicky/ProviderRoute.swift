@@ -48,7 +48,7 @@ nonisolated enum ProviderRoute: Equatable, Sendable {
         case .openAIDirect: return "openai, own key"
         case .anthropicDirect: return "anthropic, own key"
         case .answerProvider(let source): return source.displayName
-        case .backend: return "openclicky backend, account"
+        case .backend: return "agentic os backend, account"
         case .unavailable: return "unavailable"
         }
     }
@@ -151,7 +151,7 @@ nonisolated enum ProviderRouter {
     static let needsOpenAIKeySentence = "i can do that once you add your email for a free account, in settings, account. your own openai key works too."
     static let needsAnthropicKeySentence = "i can answer that once you add your email for a free account, in settings, account. a key from openai, anthropic, openrouter, gemini and others works too."
     /// The backend's own-key path answers `byok_missing_anthropic_key` here; this is that, said plainly.
-    static let assemblyAINeedsAccountSentence = "assemblyai runs on openclicky's own key, so it needs an openclicky account. pick openai or offline dictation instead."
+    static let assemblyAINeedsAccountSentence = "assemblyai runs on agentic os's own key, so it needs an agentic os account. pick openai or offline dictation instead."
 
     /// The route for `capability`: own key → that vendor; no key but an account → the backend;
     /// neither → unavailable, saying which key would do.

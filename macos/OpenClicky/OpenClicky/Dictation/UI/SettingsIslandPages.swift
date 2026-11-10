@@ -61,7 +61,7 @@ struct TeacherSettingsRow: View {
     @State private var isOn = TeacherPlugin.lessonsAreOn()
 
     static let title = "Teacher"
-    static let detail = "Ask \"teach me how Pythagoras works\" and Clicky draws it in handwriting in an empty part of your screen while it explains. What a drawing can't show comes up as a picture from Wikimedia Commons (only the search words are sent). The same switch is on the island's Teacher row."
+    static let detail = "Ask \"teach me how Pythagoras works\" and the Voice Agent draws it in handwriting in an empty part of your screen while it explains. What a drawing can't show comes up as a picture from Wikimedia Commons (only the search words are sent). The same switch is on the island's Teacher row."
 
     var body: some View {
         SettingsRow(title: Self.title, detail: Self.detail,

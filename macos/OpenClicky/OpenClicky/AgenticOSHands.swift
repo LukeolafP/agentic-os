@@ -115,7 +115,7 @@ nonisolated final class AgenticOSHands: @unchecked Sendable {
         case "displays":
             return ["displays": displays()]
         case "busy":
-            setBusy((request["on"] as? Bool) ?? false, (request["who"] as? String) ?? "Clicky agent")
+            setBusy((request["on"] as? Bool) ?? false, (request["who"] as? String) ?? "Screen agent")
             return [:]
         case "cursor":
             let location = CGEvent(source: nil)?.location ?? .zero

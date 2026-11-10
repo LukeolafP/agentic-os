@@ -28,7 +28,7 @@ extension SettingsCatalog {
                 view: AnyView(HUDPlacementRow(companionManager: companionManager))),
             SettingsItem(
                 id: "general.menuBarIcon",
-                title: "Show in menu bar", detail: "Off is fine: the island is OpenClicky’s home.",
+                title: "Show in menu bar", detail: "Off is fine: the island is Agentic OS’s home.",
                 keywords: ["menu bar", "status item", "icon", "tray"],
                 view: AnyView(MenuBarIconRow(companionManager: companionManager))),
             SettingsItem(
@@ -43,17 +43,17 @@ extension SettingsCatalog {
                 view: AnyView(SettingsRow(title: "Open at login", detail: "So \(dictationKeyName) always works.") { LoginItemToggle() })),
             SettingsItem(
                 id: "general.walkthrough",
-                title: "Welcome tour", detail: "Clicky shows you dictating, asking and handing over a task, from the island.",
+                title: "Welcome tour", detail: "The Voice Agent shows you dictating, asking and handing over a task, from the island.",
                 keywords: ["onboarding", "setup", "replay", "tour", "first run"],
-                view: AnyView(SettingsRow(title: "Welcome tour", detail: "Clicky shows you dictating, asking and handing over a task, from the island.") {
+                view: AnyView(SettingsRow(title: "Welcome tour", detail: "The Voice Agent shows you dictating, asking and handing over a task, from the island.") {
                     Button("Replay…") { companionManager.firstRunTour.replay() }
                         .pointerCursor()
                 })),
             SettingsItem(
                 id: "general.settingsTour",
-                title: "Settings tour", detail: "A one-minute look around this window: Clicky points at what matters most.",
+                title: "Settings tour", detail: "A one-minute look around this window: the Voice Agent points at what matters most.",
                 keywords: ["tour", "crash course", "show me around", "help", "guide", "replay", "walkthrough"],
-                view: AnyView(SettingsRow(title: "Settings tour", detail: "A one-minute look around this window: Clicky points at what matters most.") {
+                view: AnyView(SettingsRow(title: "Settings tour", detail: "A one-minute look around this window: the Voice Agent points at what matters most.") {
                     Button("Play") { companionManager.startSettingsTour() }
                         .pointerCursor()
                 })),
@@ -297,7 +297,7 @@ private struct MenuBarIconRow: View {
     var body: some View {
         let isForcedOn = placement == .hidden
         SettingsRow(title: "Show in menu bar",
-                    detail: isForcedOn ? "Always on while OpenClicky is hidden, so you can still reach it." : "Off is fine: the island is OpenClicky’s home.") {
+                    detail: isForcedOn ? "Always on while Agentic OS is hidden, so you can still reach it." : "Off is fine: the island is Agentic OS’s home.") {
             SettingsSwitch(isOn: Binding(get: { isVisible || isForcedOn }, set: { companionManager.setMenuBarIconVisible($0) }))
                 .disabled(isForcedOn)
         }

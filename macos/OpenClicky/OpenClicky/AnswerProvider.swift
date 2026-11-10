@@ -48,7 +48,7 @@ nonisolated enum AnswerSource: String, CaseIterable, Identifiable, Sendable {
         case .xai: return "xAI (Grok)"
         case .claudeCodePlan: return "Claude Code (your Claude plan)"
         case .codexPlan: return "Codex (your ChatGPT plan)"
-        case .openClickyAccount: return "OpenClicky free credits"
+        case .openClickyAccount: return "Agentic OS free credits"
         }
     }
 

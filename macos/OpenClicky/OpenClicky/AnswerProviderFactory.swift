@@ -32,7 +32,7 @@ nonisolated enum AnswerProviderFactory {
             return CodexAnswerProvider(executablePath: path, model: model)
         case .anthropic, .openClickyAccount:
             // ClaudeAPI answers these itself; the router never hands them over.
-            throw missing(source, "answers through openclicky's own path.")
+            throw missing(source, "answers through agentic os's own path.")
         }
     }
 

@@ -37,12 +37,12 @@ extension SettingsCatalog {
                 })),
             SettingsItem(
                 id: "account.usage.backend",
-                title: "OpenAI and AssemblyAI", detail: "Through OpenClicky.",
+                title: "OpenAI and AssemblyAI", detail: "Through Agentic OS.",
                 keywords: ["openai", "assemblyai", "allowance", "metered", "engine"],
                 view: AnyView(BackendEngineUsageRow())),
             SettingsItem(
                 id: "account.backendHost",
-                title: "Host", detail: "Where OpenClicky’s model calls go. Change it in shell.json.",
+                title: "Host", detail: "Where Agentic OS’s model calls go. Change it in shell.json.",
                 keywords: ["backend", "server", "url", "host", "shell.json"],
                 view: AnyView(BackendDetailsRow(kind: .host))),
             SettingsItem(
@@ -64,10 +64,10 @@ extension SettingsCatalog {
                 view: AnyView(ProviderKeysList())),
             SettingsItem(
                 id: "account.keysNote",
-                title: "Where keys go", detail: "Your keys go straight to that provider, never through OpenClicky, and are used instead of the free credits. Stored in ~/.openclicky/shell.json.",
+                title: "Where keys go", detail: "Your keys go straight to that provider, never through Agentic OS, and are used instead of the free credits. Stored in ~/.openclicky/shell.json.",
                 keywords: ["shell.json", "byok"],
                 chrome: .footer,
-                view: AnyView(SettingsFootnote(text: "Your keys go straight to that provider, never through OpenClicky, and are used instead of the free credits. Stored in ~/.openclicky/shell.json."))),
+                view: AnyView(SettingsFootnote(text: "Your keys go straight to that provider, never through Agentic OS, and are used instead of the free credits. Stored in ~/.openclicky/shell.json."))),
             SettingsItem(
                 id: "account.claudeCodePlan",
                 title: "Claude Code (your Claude plan)", detail: "Answer questions through Claude Code, signed in to your Claude plan.",
@@ -122,8 +122,8 @@ private struct AccountProfileRow: View {
                         GuestConfirmationCodeField(onConfirmed: { billing.refresh() })
                     }
                 } else if authSession.isGuestWithoutEmail {
-                    Text("Trying OpenClicky").font(.system(size: 15, weight: .semibold))
-                    Text("Free on OpenClicky’s credits, on this Mac. Add your email to keep the account, or your own key for more.")
+                    Text("Trying Agentic OS").font(.system(size: 15, weight: .semibold))
+                    Text("Free on Agentic OS’s credits, on this Mac. Add your email to keep the account, or your own key for more.")
                         .font(.system(size: 12)).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 } else {
@@ -189,7 +189,7 @@ private struct PlanSummary: View {
             if let summary = billing.summary {
                 if summary.byok {
                     meterHeader(trailing: "Your keys")
-                    Text("OpenClicky meters nothing: every request runs on your own key.").font(SettingsLook.caption).foregroundStyle(.secondary)
+                    Text("Agentic OS meters nothing: every request runs on your own key.").font(SettingsLook.caption).foregroundStyle(.secondary)
                 } else if !summary.isMetered {
                     meterHeader(trailing: "Not metered")
                     Text("This backend meters nothing: every request runs without an allowance.").font(SettingsLook.caption).foregroundStyle(.secondary)
@@ -254,10 +254,10 @@ private struct BackendEngineUsageRow: View {
                 : "OpenAI runs straight on your own key, not metered. AssemblyAI needs an account."
             badge = "Your key"
         } else if OpenClickyConfiguration.hasAccountToken {
-            detail = "Through OpenClicky, counted against your free allowance."
+            detail = "Through Agentic OS, counted against your free allowance."
             badge = "Allowance"
         } else {
-            detail = "Through OpenClicky. Needs an account or your own OpenAI key."
+            detail = "Through Agentic OS. Needs an account or your own OpenAI key."
             badge = "Needs account"
         }
         return SettingsRow(title: "OpenAI and AssemblyAI", detail: detail) {
@@ -305,7 +305,7 @@ enum KeyProvider: String, CaseIterable, Identifiable {
         case .elevenLabs: return "Speaks answers in ElevenLabs’ voice, on your own ElevenLabs account."
         case .googleCloud: return "Speaks answers. A Google Cloud API key with the Text-to-Speech API switched on; an AI Studio key won’t do."
         case .amazonPolly: return "Speaks answers in Amazon’s neural voices. Paste access key ID:secret key, then :region if it isn’t us-east-1."
-        case .spotify: return "Finds the song you asked for. Paste client id:client secret from developer.spotify.com; without it OpenClicky’s own lookup is used."
+        case .spotify: return "Finds the song you asked for. Paste client id:client secret from developer.spotify.com; without it Agentic OS’s own lookup is used."
         }
     }
 
@@ -567,7 +567,7 @@ private struct PlanSubscriptionRow: View {
         case .none: return "Checking…"
         case .notInstalled?: return plan == .claudeCodePlan ? "Claude Code isn’t installed on this Mac." : "Codex isn’t installed on this Mac."
         case .installedSignedOut?: return "Installed, not signed in. Run “\(command)” in Terminal and sign in."
-        case .ready?: return isOn ? "Signed in. Answering with your plan when it’s the one picked (Settings → Clicky)." : "Signed in. Switch on to answer with your plan."
+        case .ready?: return isOn ? "Signed in. Answering with your plan when it’s the one picked (Settings → Voice Agent)." : "Signed in. Switch on to answer with your plan."
         }
     }
 }

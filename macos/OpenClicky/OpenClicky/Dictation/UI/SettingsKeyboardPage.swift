@@ -75,16 +75,16 @@ extension SettingsCatalog {
                 })),
             SettingsItem(
                 id: "keyboard.talk",
-                title: "Talk to Clicky", detail: "Ask about anything on screen. It answers out loud and points.",
+                title: "Talk to the Voice Agent", detail: "Ask about anything on screen. It answers out loud and points.",
                 keywords: ["⌃", "⌥", "control option", "voice", "ask", "companion"],
-                view: AnyView(SettingsRow(title: "Talk to Clicky", detail: "Ask about anything on screen. It answers out loud and points.") {
+                view: AnyView(SettingsRow(title: "Talk to the Voice Agent", detail: "Ask about anything on screen. It answers out loud and points.") {
                     SettingsKeys(keys: ["⌃", "⌥"], gesture: "hold")
                 })),
             SettingsItem(
                 id: "keyboard.type",
-                title: "Type to Clicky", detail: "A one-line composer opens in the island.",
+                title: "Type to the Voice Agent", detail: "A one-line composer opens in the island.",
                 keywords: ["⌃", "composer", "notch", "island", "text", "control twice"],
-                view: AnyView(SettingsRow(title: "Type to Clicky", detail: "A one-line composer opens in the island.") {
+                view: AnyView(SettingsRow(title: "Type to the Voice Agent", detail: "A one-line composer opens in the island.") {
                     SettingsKeys(keys: ["⌃"], gesture: "tap twice")
                 })),
             // Hands-free runs on fast voice or, without a realtime key, on the standard lane; with

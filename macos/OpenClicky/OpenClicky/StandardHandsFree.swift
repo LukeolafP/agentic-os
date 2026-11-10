@@ -156,7 +156,7 @@ nonisolated enum HandsFreeSignOff {
     private static let phrases: Set<String> = [
         "that's all", "thats all", "that is all", "that's all i need", "that's all thanks", "that's all thank you",
         "that's it", "that's it for now", "that's it thanks", "stop listening", "you can stop listening",
-        "ok bye", "okay bye", "bye", "goodbye", "bye clicky", "goodbye clicky", "i'm done", "im done", "i'm done thanks",
+        "ok bye", "okay bye", "bye", "goodbye", "bye clicky", "goodbye clicky", "bye voice agent", "goodbye voice agent", "i'm done", "im done", "i'm done thanks",
         "we're done", "that'll be all", "that will be all", "thanks that's all", "thank you that's all",
     ]
 

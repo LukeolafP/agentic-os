@@ -137,9 +137,9 @@ struct CalendarDashboardColumn: View {
 
     private var noAccessExplanation: String {
         switch store.access {
-        case .notDetermined: return "See your week here once OpenClicky can read your calendar."
-        case .writeOnly: return "OpenClicky can add events but not read them. Allow full access in System Settings."
-        case .denied, .restricted, .allowed: return "Calendar access is off for OpenClicky. Turn it on in System Settings."
+        case .notDetermined: return "See your week here once Agentic OS can read your calendar."
+        case .writeOnly: return "Agentic OS can add events but not read them. Allow full access in System Settings."
+        case .denied, .restricted, .allowed: return "Calendar access is off for Agentic OS. Turn it on in System Settings."
         }
     }
 

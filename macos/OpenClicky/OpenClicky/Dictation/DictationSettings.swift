@@ -32,7 +32,7 @@ enum DictationEngineChoice: String, CaseIterable, Identifiable {
         case .offline: return "on this Mac"
         case .parakeet: return "Parakeet"
         case .sarvam: return "Sarvam"
-        case .openclicky: return "OpenClicky"
+        case .openclicky: return "Agentic OS"
         case .assemblyai: return "AssemblyAI"
         }
     }
@@ -70,8 +70,8 @@ extension DictationEngineChoice {
         case .offline: return "This Mac"
         case .parakeet: return "Parakeet, on this Mac"
         case .sarvam: return "Sarvam"
-        case .openclicky: return "OpenAI, via OpenClicky"
-        case .assemblyai: return "AssemblyAI, via OpenClicky"
+        case .openclicky: return "OpenAI, via Agentic OS"
+        case .assemblyai: return "AssemblyAI, via Agentic OS"
         }
     }
 
@@ -99,8 +99,8 @@ extension DictationEngineChoice {
         switch self {
         case .offline, .parakeet: return "Your voice stays on this Mac."
         case .sarvam: return "Audio goes to Sarvam with your key."
-        case .openclicky: return "Audio goes to OpenAI through the OpenClicky backend."
-        case .assemblyai: return "Audio goes to AssemblyAI through the OpenClicky backend."
+        case .openclicky: return "Audio goes to OpenAI through the Agentic OS backend."
+        case .assemblyai: return "Audio goes to AssemblyAI through the Agentic OS backend."
         }
     }
 
@@ -112,8 +112,8 @@ extension DictationEngineChoice {
             ? "Far more accurate than Apple’s recogniser on this Mac, and offline too. English and 24 European languages. A \(ParakeetDictation.downloadSizeText) download."
             : "NVIDIA’s open model, offline. English and 24 European languages. A \(ParakeetDictation.downloadSizeText) download."
         case .sarvam: return "Saaras hears eleven Indian languages. Billed by Sarvam to your key."
-        case .openclicky: return "Needs an OpenClicky account or your own OpenAI key."
-        case .assemblyai: return "Words appear as you speak. Needs the OpenClicky backend."
+        case .openclicky: return "Needs an Agentic OS account or your own OpenAI key."
+        case .assemblyai: return "Words appear as you speak. Needs the Agentic OS backend."
         }
     }
 

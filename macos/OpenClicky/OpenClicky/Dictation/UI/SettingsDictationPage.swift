@@ -46,7 +46,7 @@ extension SettingsCatalog {
                 view: AnyView(DictationCleanUpRow(settings: settings))),
             SettingsItem(
                 id: "dictation.input",
-                title: "Input", detail: "Automatic follows the Mac’s default, but skips the headphone jack when nothing there can hear. Clicky listens through it too.",
+                title: "Input", detail: "Automatic follows the Mac’s default, but skips the headphone jack when nothing there can hear. The Voice Agent listens through it too.",
                 keywords: ["microphone", "mic", "device", "input", "headset", "airpods"],
                 view: AnyView(MicrophoneInputRow(settings: settings))),
             SettingsItem(
@@ -397,7 +397,7 @@ struct DictationCleanUpRow: View {
     var body: some View {
         let _ = shellSettingsRevision.revision
         let hasModel = DictationEngineResolver.makePolisher() != nil
-        let needsModelNote = hasModel ? "" : " Needs an AI key (Settings → Keys & Account) or a free OpenClicky account."
+        let needsModelNote = hasModel ? "" : " Needs an AI key (Settings → Keys & Account) or a free Agentic OS account."
         let tidiedOnThisMac = AppleModelTakePolisherAvailability.isAvailable(languageCode: settings.languageCode)
         let whereWordsAreTidied = tidiedOnThisMac ? "Apple Intelligence tidies your words on this Mac" : "Your words are sent online to be tidied"
         let cleanUpIsOn = Binding<Bool>(

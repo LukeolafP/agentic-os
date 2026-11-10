@@ -73,8 +73,8 @@ struct WritingPageView: View {
     /// A name the engines get wrong, from where the person is.
     private var dictionaryExample: String {
         settings.region.offersIndianOptions
-            ? "You say “aditya shatriya”, OpenClicky writes Aaditya Kshatriya."
-            : "You say “shivon”, OpenClicky writes Siobhán."
+            ? "You say “aditya shatriya”, Agentic OS writes Aaditya Kshatriya."
+            : "You say “shivon”, Agentic OS writes Siobhán."
     }
 
     private var sortedTerms: [DictionaryTerm] {
@@ -84,7 +84,7 @@ struct WritingPageView: View {
     private var dictionarySection: some View {
         Section {
             if sortedTerms.isEmpty {
-                Text("Nothing here yet. Teach OpenClicky its first term.")
+                Text("Nothing here yet. Teach Agentic OS its first term.")
                     .font(SettingsLook.rowTitle).foregroundStyle(.secondary)
             }
             ForEach(sortedTerms) { term in
@@ -125,7 +125,7 @@ struct WritingPageView: View {
     private var snippetsSection: some View {
         Section {
             if sortedSnippets.isEmpty {
-                Text("Nothing here yet. Teach OpenClicky its first snippet.")
+                Text("Nothing here yet. Teach Agentic OS its first snippet.")
                     .font(SettingsLook.rowTitle).foregroundStyle(.secondary)
             }
             ForEach(sortedSnippets) { snippet in
@@ -480,10 +480,10 @@ private struct WritingTermEditorSheet: View {
         VStack(spacing: 0) {
             Form {
                 Section {
-                    TextField("OpenClicky writes", text: $writtenForm, prompt: Text("Aaditya Kshatriya"))
+                    TextField("Agentic OS writes", text: $writtenForm, prompt: Text("Aaditya Kshatriya"))
                     TextField("You say", text: $heardAsText, prompt: Text("aditya shatriya, aditya"))
                 } header: {
-                    Text(term == nil ? "Teach OpenClicky a term" : "Edit term")
+                    Text(term == nil ? "Teach Agentic OS a term" : "Edit term")
                 } footer: {
                     SettingsFootnote(text: "“You say” is optional; separate several with commas. The written form is always matched too, in any casing.")
                 }
@@ -543,7 +543,7 @@ private struct WritingSnippetEditorSheet: View {
                             .font(SettingsLook.caption).foregroundStyle(SettingsLook.danger)
                     }
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("OpenClicky writes").font(SettingsLook.rowTitle)
+                        Text("Agentic OS writes").font(SettingsLook.rowTitle)
                         TextEditor(text: $replacement)
                             .font(SettingsLook.rowTitle)
                             .scrollContentBackground(.hidden)
@@ -551,10 +551,10 @@ private struct WritingSnippetEditorSheet: View {
                             .frame(height: 120)
                             .background(RoundedRectangle(cornerRadius: SettingsLook.Metric.controlRadius, style: .continuous).fill(Color(nsColor: .textBackgroundColor)))
                             .overlay(RoundedRectangle(cornerRadius: SettingsLook.Metric.controlRadius, style: .continuous).strokeBorder(SettingsLook.hairline))
-                            .accessibilityLabel("OpenClicky writes")
+                            .accessibilityLabel("Agentic OS writes")
                     }
                 } header: {
-                    Text(snippet == nil ? "Teach OpenClicky a snippet" : "Edit snippet")
+                    Text(snippet == nil ? "Teach Agentic OS a snippet" : "Edit snippet")
                 } footer: {
                     SettingsFootnote(text: "The saved text is written only when the whole take is the trigger.")
                 }

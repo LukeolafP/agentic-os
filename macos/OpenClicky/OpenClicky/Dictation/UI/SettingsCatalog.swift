@@ -120,7 +120,7 @@ struct SettingsCatalog {
         return [
             item("words.takes", section: .words, title: "Your takes", detail: "Every take you dictated, with search and filters.",
                  keywords: ["history", "takes", "transcript", "past", "record", "recording", "retry", "dictated"]),
-            item("words.tryIt", section: .words, title: "Try it here", detail: "A box to dictate into and see what OpenClicky writes.",
+            item("words.tryIt", section: .words, title: "Try it here", detail: "A box to dictate into and see what Agentic OS writes.",
                  keywords: ["test", "practice", "try", "scratch"]),
             item("writing.dictionary", section: .writing, title: "Dictionary", detail: "Names and terms written exactly as you expect.",
                  keywords: ["dictionary", "terms", "names", "spelling", "vocabulary", "words", "misheard"]),

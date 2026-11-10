@@ -34,10 +34,10 @@ enum DiskImageSelfInstaller {
     static func offerToInstallIfNeeded() -> Bool {
         guard case let .install(destination, replacesExisting) = plan(bundlePath: Bundle.main.bundlePath) else { return false }
         let alert = NSAlert()
-        alert.messageText = "move openclicky to applications?"
+        alert.messageText = "move agentic os to applications?"
         alert.informativeText = replacesExisting
             ? "a copy is already in /Applications. this build replaces it, keeps your settings, and opens from there."
-            : "openclicky runs best from /Applications: the permissions you grant stay with the copy you keep."
+            : "agentic os runs best from /Applications: the permissions you grant stay with the copy you keep."
         alert.addButton(withTitle: replacesExisting ? "Replace and Open" : "Move to Applications")
         alert.addButton(withTitle: "Not Now")
         NSApp.activate(ignoringOtherApps: true)
@@ -46,8 +46,8 @@ enum DiskImageSelfInstaller {
             try install(from: Bundle.main.bundlePath, to: destination, replacesExisting: replacesExisting)
         } catch {
             let failure = NSAlert()
-            failure.messageText = "openclicky couldn't install itself"
-            failure.informativeText = "\(error.localizedDescription)\n\ndrag openclicky to applications instead."
+            failure.messageText = "agentic os couldn't install itself"
+            failure.informativeText = "\(error.localizedDescription)\n\ndrag agentic os to applications instead."
             failure.runModal()
             return false
         }

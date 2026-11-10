@@ -108,8 +108,8 @@ struct NotchBandRow: View {
                     .accessibilityLabel("settings")
                 Button(action: { companionManager.quitWithFarewell() }) { Image(systemName: "power") }
                     .buttonStyle(IslandIconButtonStyle(size: 11, frameScale: 2))
-                    .help("quit openclicky")
-                    .accessibilityLabel("quit openclicky")
+                    .help("quit agentic os")
+                    .accessibilityLabel("quit agentic os")
             }
             .frame(maxWidth: sideWidth, alignment: .trailing)
         }

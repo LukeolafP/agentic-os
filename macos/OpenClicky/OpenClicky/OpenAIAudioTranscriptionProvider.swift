@@ -21,7 +21,7 @@ final class OpenAIAudioTranscriptionProvider: BuddyTranscriptionProvider {
     // `ProviderRouter` decides where each upload goes: with the person's own OpenAI key, straight to
     // OpenAI's /audio/transcriptions; otherwise through the OpenClicky backend (POST
     // /agent/transcribe) on the account's token, where OpenClicky's key and model choice are used.
-    let displayName = "OpenClicky"
+    let displayName = "Agentic OS"
     let requiresSpeechRecognitionPermission = false
     /// The language to transcribe in (a bare code such as "hi"); nil lets the model detect it. Read
     /// when a take starts, on the main actor where the settings live. Dictation passes the styles
@@ -49,7 +49,7 @@ final class OpenAIAudioTranscriptionProvider: BuddyTranscriptionProvider {
     ) async throws -> any BuddyStreamingTranscriptionSession {
         guard isConfigured else {
             throw OpenAIAudioTranscriptionProviderError(
-                message: unavailableExplanation ?? "OpenClicky transcription is not configured."
+                message: unavailableExplanation ?? "Agentic OS transcription is not configured."
             )
         }
 
@@ -90,7 +90,7 @@ private final class OpenAIAudioTranscriptionSession: BuddyStreamingTranscription
     /// compile-time literal, so a malformed value must throw instead of crashing the app.
     private static func transcriptionURL() throws -> URL {
         guard let url = URL(string: "\(OpenClickyConfiguration.backendBaseURL)/agent/transcribe") else {
-            throw OpenAIAudioTranscriptionProviderError(message: "OpenClicky backend URL is invalid.")
+            throw OpenAIAudioTranscriptionProviderError(message: "Agentic OS backend URL is invalid.")
         }
         return url
     }
@@ -261,14 +261,14 @@ private final class OpenAIAudioTranscriptionSession: BuddyStreamingTranscription
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw OpenAIAudioTranscriptionProviderError(
-                message: "OpenClicky transcription returned an invalid response."
+                message: "Agentic OS transcription returned an invalid response."
             )
         }
 
         guard (200...299).contains(httpResponse.statusCode) else {
             let responseText = String(data: responseData, encoding: .utf8) ?? "Unknown error"
             throw OpenAIAudioTranscriptionProviderError(
-                message: "OpenClicky transcription failed (HTTP \(httpResponse.statusCode)): \(responseText)"
+                message: "Agentic OS transcription failed (HTTP \(httpResponse.statusCode)): \(responseText)"
             )
         }
 
@@ -280,7 +280,7 @@ private final class OpenAIAudioTranscriptionSession: BuddyStreamingTranscription
         }
 
         throw OpenAIAudioTranscriptionProviderError(
-            message: "OpenClicky transcription returned an empty transcript."
+            message: "Agentic OS transcription returned an empty transcript."
         )
     }
 

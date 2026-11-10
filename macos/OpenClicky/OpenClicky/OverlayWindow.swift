@@ -187,7 +187,7 @@ struct BlueCursorView: View {
     @State private var clickRippleScale: CGFloat = 0.3
     @State private var clickRippleOpacity: Double = 0
 
-    private let fullWelcomeMessage = "Hi, I'm OpenClicky."
+    private let fullWelcomeMessage = "Hi, I'm Agentic OS."
 
     private let navigationPointerPhrases = [
         "right here!",

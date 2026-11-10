@@ -14,7 +14,7 @@ extension SettingsCatalog {
         [
             SettingsItem(
                 id: "about.app",
-                title: "OpenClicky", detail: "Version \(AppVersion.shortVersion) (\(AppVersion.buildNumber)) · Open source, MIT",
+                title: "Agentic OS", detail: "Version \(AppVersion.shortVersion) (\(AppVersion.buildNumber)) · Open source, MIT",
                 keywords: ["version", "about", "build", "mit", "license", "update", "updates", "sparkle", "check now"],
                 view: AnyView(AboutAppRow())),
             SettingsItem(
@@ -54,7 +54,7 @@ private struct AboutAppRow: View {
                 .frame(width: 44, height: 44)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
-                Text("OpenClicky").font(.system(size: 15, weight: .semibold))
+                Text("Agentic OS").font(.system(size: 15, weight: .semibold))
                 Text("Version \(AppVersion.shortVersion) (\(AppVersion.buildNumber)) · Open source, MIT")
                     .font(.system(size: 12)).foregroundStyle(.secondary)
                     .textSelection(.enabled)

@@ -245,7 +245,7 @@ enum WriteInPlace {
 
     /// Added to the ask prompt when the tool is offered.
     static let promptInstruction = """
-    writing in place: when the user asks you to rephrase, rewrite, shorten, fix or translate the text quoted as highlighted or in their text box, call write_in_place with the complete new text, and say only a few words about what you changed (for example "made it warmer and shorter."). openclicky puts it in their email and tells them how to undo it. never read the new text out.
+    writing in place: when the user asks you to rephrase, rewrite, shorten, fix or translate the text quoted as highlighted or in their text box, call write_in_place with the complete new text, and say only a few words about what you changed (for example "made it warmer and shorter."). agentic os puts it in their email and tells them how to undo it. never read the new text out.
     """
 
     /// Added to the ask prompt when no text to write over was found, so a rewrite is not read out instead.

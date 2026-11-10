@@ -1774,7 +1774,7 @@ struct NotchCompactStatusView: View {
         switch companionManager.voiceState {
         case .idle:
             if companionManager.agentActivityText != nil { return "an agent is working" }
-            return companionManager.isAlwaysListening ? "hands-free · just talk" : "openclicky"
+            return companionManager.isAlwaysListening ? "hands-free · just talk" : "agentic os"
         case .listening:
             if isDictating { return "dictating" }
             return companionManager.isAlwaysListening ? "listening · hands-free" : "listening"
@@ -1838,7 +1838,7 @@ struct NotchComposerView: View {
                 .foregroundColor(DS.HUD.pointer)
             NotchComposerTextField(
                 text: $requestText,
-                placeholder: companionManager.notchHUDManager.composerThreadId == nil ? "ask clicky anything about your screen…" : "follow up with the agent…",
+                placeholder: companionManager.notchHUDManager.composerThreadId == nil ? "ask the voice agent anything about your screen…" : "follow up with the agent…",
                 onSubmit: submitRequest,
                 onEscape: { companionManager.notchHUDManager.closeTextComposer() }
             )

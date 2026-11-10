@@ -234,7 +234,7 @@ final class RealtimeVoiceClient: NSObject, ObservableObject {
     private static let sampleRate: Double = RealtimeAudioEngine.sampleRate
 
     static let defaultInstructions = """
-    You are OpenClicky, a friendly, fast macOS voice assistant. \
+    You are the Agentic OS voice agent, a friendly, fast macOS voice assistant. \
     Keep spoken replies short (one or two sentences). Every request comes with a screenshot of the user's current screen \
     (with the pointer position noted): "this", "here", "that" refer to what is on screen, usually near the pointer. Look \
     at the screenshot and answer about it directly; never say you cannot see the screen and never mention a camera. \
@@ -499,7 +499,7 @@ final class RealtimeVoiceClient: NSObject, ObservableObject {
             // backendBaseURL is user-configurable (shell.json or an environment override), not a
             // compile-time literal, so a malformed value must throw instead of crashing the app.
             guard let secretRequestURL = URL(string: "\(OpenClickyConfiguration.backendBaseURL)/agent/realtime/session") else {
-                throw RealtimeVoiceError.invalidURL("OpenClicky backend URL is invalid: \(OpenClickyConfiguration.backendBaseURL)")
+                throw RealtimeVoiceError.invalidURL("Agentic OS backend URL is invalid: \(OpenClickyConfiguration.backendBaseURL)")
             }
             var secretRequest = URLRequest(url: secretRequestURL)
             secretRequest.httpMethod = "POST"
@@ -680,7 +680,7 @@ final class RealtimeVoiceClient: NSObject, ObservableObject {
         let tool: [String: Any] = [
             "type": "function",
             "name": "send_to_agent",
-            "description": "Hand a task that requires doing work (files, code, commands, apps, research) to the OpenClicky agent. Returns a short result summary.",
+            "description": "Hand a task that requires doing work (files, code, commands, apps, research) to the Agentic OS agent. Returns a short result summary.",
             "parameters": ["type": "object", "properties": ["task": ["type": "string", "description": "A clear, self-contained description of what to do."]], "required": ["task"]],
         ]
         let pointTool: [String: Any] = [
@@ -986,7 +986,7 @@ final class RealtimeVoiceClient: NSObject, ObservableObject {
                 recordPermission: AVAudioApplication.shared.recordPermission))
         }
         guard microphoneAuthorization != .denied, microphoneAuthorization != .restricted else {
-            throw RealtimeVoiceError.audio("microphone access is denied for OpenClicky (System Settings → Privacy & Security → Microphone)")
+            throw RealtimeVoiceError.audio("microphone access is denied for Agentic OS (System Settings → Privacy & Security → Microphone)")
         }
         if !isAudioWired {
             isAudioWired = true
@@ -1283,7 +1283,7 @@ final class RealtimeVoiceClient: NSObject, ObservableObject {
                 await previousAction?.value
                 guard !Task.isCancelled, let self else { return }
                 let startedAt = Date()
-                let outcome = await self.onMacAction?(action) ?? .failed("OpenClicky is not available")
+                let outcome = await self.onMacAction?(action) ?? .failed("Agentic OS is not available")
                 if outcome.thenLooksAtScreen {
                     if outcome.looksWithoutWaitingForAPage {
                         try? await Task.sleep(nanoseconds: 400_000_000)
@@ -1448,8 +1448,8 @@ final class RealtimeVoiceClient: NSObject, ObservableObject {
                         clickLog = "refused, under the Dock or menu bar"
                         clickOutput = "Not clicked: \(label) is at the edge of the screen, under the Dock or the menu bar. Call scroll with amount little (down if it is near the bottom, up if near the top), then call click again for it without asking."
                     case .ownWindow:
-                        clickLog = "refused, OpenClicky's own window"
-                        clickOutput = "Not clicked: that spot is on OpenClicky's own window."
+                        clickLog = "refused, Agentic OS's own window"
+                        clickOutput = "Not clicked: that spot is on Agentic OS's own window."
                     case .notAllowed:
                         clickLog = "refused, no Accessibility permission"
                         clickOutput = MacActionOutcome.needsAccessibility.spokenSentence
@@ -1661,7 +1661,7 @@ enum RealtimeVoiceError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .notConfigured: return "OpenClicky backend token is not configured."
+        case .notConfigured: return "Agentic OS backend token is not configured."
         case .notConnected: return "Realtime session is not connected."
         case .backend(let message): return "Realtime session could not be created: \(message)"
         case .audio(let message): return "Audio setup failed: \(message)"

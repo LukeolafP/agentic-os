@@ -716,7 +716,7 @@ private struct WordsTakeDetailSheet: View {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { _ = FrontAppTextInserter.insert(textToPaste) }
                 }
                 .pointerCursor()
-                .help("Hides OpenClicky, then pastes into the app behind it")
+                .help("Hides Agentic OS, then pastes into the app behind it")
                 Button("Delete", role: .destructive) {
                     WordsHistoryWrite.perform("delete", takeID: take.id, { try companionManager.dictationTakeStore?.delete(takeID: take.id) })
                     companionManager.dictationTakeController.historyDidChange()

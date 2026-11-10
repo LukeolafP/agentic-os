@@ -243,7 +243,7 @@ final class CompanionManager: ObservableObject {
                 if !self.didGreetRealtime {
                     self.didGreetRealtime = true
                     let languageName = ReplyLanguage.englishName(for: ReplyLanguage.currentCode)
-                    self.realtimeVoiceClient.requestResponse(instructions: "Greet the user in \(languageName) in one short sentence as OpenClicky.")
+                    self.realtimeVoiceClient.requestResponse(instructions: "Greet the user in \(languageName) in one short sentence as the Agentic OS voice agent.")
                 }
             }
         }
@@ -332,7 +332,7 @@ final class CompanionManager: ObservableObject {
             self?.pointAt(screenshotPoint: screenshotPoint, label: label, in: capture)
         }
         realtimeVoiceClient.onAgentTask = { [weak self] task in
-            guard let self else { return "OpenClicky is not available." }
+            guard let self else { return "Agentic OS is not available." }
             self.agentActivityText = "starting agent…"
             let screenCaptures = (try? await CompanionScreenCaptureUtility.captureAllScreensAsJPEG()) ?? []
             do {
@@ -343,7 +343,7 @@ final class CompanionManager: ObservableObject {
             }
         }
         realtimeVoiceClient.onMacAction = { [weak self] action in
-            guard let self else { return .failed("OpenClicky is not available") }
+            guard let self else { return .failed("Agentic OS is not available") }
             let outcome = await self.macActionRunner.perform(action)
             if outcome.didSomething { self.lastSuccessfulQuickActionAt = Date() }
             return outcome
@@ -810,7 +810,7 @@ final class CompanionManager: ObservableObject {
                   UserDefaults.standard.string(forKey: "openClickyPointerPresence") == nil else { return }
             AppLog.append("pointer: hides until a shake now, after \(useCount) uses")
             self.setPointerPresence(newPresence)
-            self.showQuietNotice("from now on i'll stay out of the way. shake the mouse when you want me. you can change this in settings, clicky.")
+            self.showQuietNotice("from now on i'll stay out of the way. shake the mouse when you want me. you can change this in settings, voice agent.")
         }
     }
 
@@ -1368,7 +1368,7 @@ final class CompanionManager: ObservableObject {
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) { [weak self] in
             guard let self else { return }
-            self.streamCursorCaption("hi! i’m clicky. i follow your pointer, and point at things when you ask.", holdSeconds: 6)
+            self.streamCursorCaption("hi! i’m your voice agent. i follow your pointer, and point at things when you ask.", holdSeconds: 6)
             // "Hi! I'm Clicky. Let me show you three quick things.", recorded and bundled.
             self.recordedVoice.play(.tourHello)
         }
@@ -1658,7 +1658,7 @@ final class CompanionManager: ObservableObject {
     // MARK: - Companion Prompt
 
     static let companionVoiceResponseSystemPrompt = """
-    you're openclicky, a friendly always-on companion that lives in the user's menu bar. the user just spoke to you via push-to-talk and you can see their screen(s). your reply will be spoken aloud via text-to-speech, so write the way you'd actually talk. this is an ongoing conversation, you remember everything they've said before.
+    you're the agentic os voice agent, a friendly always-on companion that lives in the user's menu bar. the user just spoke to you via push-to-talk and you can see their screen(s). your reply will be spoken aloud via text-to-speech, so write the way you'd actually talk. this is an ongoing conversation, you remember everything they've said before.
 
     rules:
     - keep it short: one or two short sentences, about thirty words at most. people listen to this, and a long answer is hard to follow by ear.
@@ -1693,7 +1693,7 @@ final class CompanionManager: ObservableObject {
     - element is on screen 2 (not where cursor is): "[POINT:400,300:terminal:screen2] that's over on your other monitor, see the terminal window?"
 
     guided steps:
-    when they ask how to do something that takes more than one step on screen, give only the first step, point at it, and end your reply with \(GuidedStepMarker.marker). a step is one click, or one thing to type, nothing more (a right-click that opens a menu is one step, the menu item is the next). openclicky then waits for them to do it (a click, or return or tab after typing) and asks you on its own with "\(GuidedStepRules.nextStepRequestOpening) …" and a fresh screenshot. look at the new screen and give the next step the same way: one step, pointed at, ending with \(GuidedStepMarker.marker) while more steps remain. leave \(GuidedStepMarker.marker) off the last step, and off any answer that isn't a step. if the new screen shows they clicked something else or went somewhere unexpected, gently help them back, still ending with \(GuidedStepMarker.marker). when openclicky's question starts with "\(GuidedStepRules.offTargetRequestOpening) …", their click landed away from where you pointed; your pointing is only approximate, so it may still have been right. check the new screen: if it was the right thing, give the next step as usual; if not, gently point them back, still ending with \(GuidedStepMarker.marker). if the screen hasn't changed the way that step should change it, it didn't work yet: point at the same thing again and say to try once more. if you can't tell whether the step worked, say what they should see and what to do then, and end with \(GuidedStepMarker.marker) so you keep waiting with them. never end a step with a question. if a permission, password or security prompt is on screen and it isn't what they asked about, it is not a step: never point at it or tell them which button to pick. reply as usual, the tag first pointing at the first step of their task, then a few words that the prompt is theirs to decide, then the step, ending with \(GuidedStepMarker.marker). for a step that is typing, say what to type and to press tab or click the next thing when they're done.
+    when they ask how to do something that takes more than one step on screen, give only the first step, point at it, and end your reply with \(GuidedStepMarker.marker). a step is one click, or one thing to type, nothing more (a right-click that opens a menu is one step, the menu item is the next). agentic os then waits for them to do it (a click, or return or tab after typing) and asks you on its own with "\(GuidedStepRules.nextStepRequestOpening) …" and a fresh screenshot. look at the new screen and give the next step the same way: one step, pointed at, ending with \(GuidedStepMarker.marker) while more steps remain. leave \(GuidedStepMarker.marker) off the last step, and off any answer that isn't a step. if the new screen shows they clicked something else or went somewhere unexpected, gently help them back, still ending with \(GuidedStepMarker.marker). when agentic os's question starts with "\(GuidedStepRules.offTargetRequestOpening) …", their click landed away from where you pointed; your pointing is only approximate, so it may still have been right. check the new screen: if it was the right thing, give the next step as usual; if not, gently point them back, still ending with \(GuidedStepMarker.marker). if the screen hasn't changed the way that step should change it, it didn't work yet: point at the same thing again and say to try once more. if you can't tell whether the step worked, say what they should see and what to do then, and end with \(GuidedStepMarker.marker) so you keep waiting with them. never end a step with a question. if a permission, password or security prompt is on screen and it isn't what they asked about, it is not a step: never point at it or tell them which button to pick. reply as usual, the tag first pointing at the first step of their task, then a few words that the prompt is theirs to decide, then the step, ending with \(GuidedStepMarker.marker). for a step that is typing, say what to type and to press tab or click the next thing when they're done.
     example: user asks how to attach a file in mail: "[POINT:612,88:attach button] click the paperclip at the top of your message. \(GuidedStepMarker.marker)"
 
     not sure:
@@ -2352,7 +2352,7 @@ final class CompanionManager: ObservableObject {
             }
         }
         if let refusal = refusedQuestion(error), refusal.status == 401 || refusal.status == 403 {
-            return "something went wrong talking to the openclicky backend. check the backend and your token in the settings file."
+            return "something went wrong talking to the agentic os backend. check the backend and your token in the settings file."
         }
         // Not an HTTP refusal: the stream had started when Anthropic reported the failure.
         let nsError = error as NSError
@@ -2715,7 +2715,7 @@ final class CompanionManager: ObservableObject {
     /// the synthesizer every new question stops: a separate NSSpeechSynthesizer used to keep
     /// talking over the next question.
     private func speakCreditsErrorFallback() {
-        speakWithSystemVoice("something went wrong talking to the openclicky backend. check the backend and your token in the settings file.")
+        speakWithSystemVoice("something went wrong talking to the agentic os backend. check the backend and your token in the settings file.")
     }
 
     // MARK: - Point Tag Parsing
@@ -2957,7 +2957,7 @@ final class CompanionManager: ObservableObject {
     /// The Home tab's (i): the buddy types out what OpenClicky does, next to itself; a hidden
     /// buddy is shown for the duration.
     func explainWhatOpenClickyDoes() {
-        let message = "hi, i'm openclicky. hold control + option and ask about anything on your screen. "
+        let message = "hi, i'm your agentic os voice agent. hold control + option and ask about anything on your screen. "
             + "i'll answer out loud and point at what you need. tap control twice to type instead, "
             + "hold fn to dictate into any app, and real work goes to the agent."
         if !isOverlayVisible {
@@ -2972,7 +2972,7 @@ final class CompanionManager: ObservableObject {
     /// The prompt for the pointing demo (onboarding and the tour's "watch this"): one specific thing
     /// near the middle of the screen, a few words about it, and the [POINT:…] tag last.
     private static let onboardingDemoSystemPrompt = """
-    you're openclicky, a small blue cursor buddy living on the user's screen. you're showing off during onboarding. look at their screen and find ONE specific, concrete thing to point at. pick something with a clear name or identity: a specific app icon (say its name), a specific word or phrase of text you can read, a specific filename, a specific button label, a specific tab title, a specific image you can describe. do NOT point at vague things like "a window" or "some text", be specific about exactly what you see.
+    you're the agentic os voice agent, a small blue cursor buddy living on the user's screen. you're showing off during onboarding. look at their screen and find ONE specific, concrete thing to point at. pick something with a clear name or identity: a specific app icon (say its name), a specific word or phrase of text you can read, a specific filename, a specific button label, a specific tab title, a specific image you can describe. do NOT point at vague things like "a window" or "some text", be specific about exactly what you see.
 
     make a short quirky 3-6 word observation about the specific thing you picked, something fun, playful, or curious that shows you actually read/recognized it. no emojis ever. NEVER quote or repeat text you see on screen, just react to it. keep it to 6 words max, no exceptions.
 

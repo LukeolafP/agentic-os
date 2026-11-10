@@ -103,7 +103,7 @@ final class AssemblyAIStreamingTranscriptionProvider: BuddyTranscriptionProvider
         // instead of crashing the app.
         guard let tokenProxyRequestURL = URL(string: Self.tokenProxyURL) else {
             throw AssemblyAIStreamingTranscriptionProviderError(
-                message: "OpenClicky backend URL is invalid: \(Self.tokenProxyURL)"
+                message: "Agentic OS backend URL is invalid: \(Self.tokenProxyURL)"
             )
         }
         var request = URLRequest(url: tokenProxyRequestURL)

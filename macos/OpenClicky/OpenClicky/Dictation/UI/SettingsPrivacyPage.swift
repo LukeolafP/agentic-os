@@ -41,16 +41,16 @@ extension SettingsCatalog {
                 })),
             SettingsItem(
                 id: "privacy.pauseBeforeSendingScreen",
-                title: "Pause before sending my screen", detail: "A moment to press esc before Clicky sends your screen.",
+                title: "Pause before sending my screen", detail: "A moment to press esc before the Voice Agent sends your screen.",
                 keywords: ["screenshot", "screen", "cancel", "esc", "send", "wait", "consent"],
-                view: AnyView(SettingsRow(title: "Pause before sending my screen", detail: "A moment to press esc before Clicky sends your screen.") {
+                view: AnyView(SettingsRow(title: "Pause before sending my screen", detail: "A moment to press esc before the Voice Agent sends your screen.") {
                     SettingsToggle(settings: settings, keyPath: \.pauseBeforeSendingScreen)
                 })),
             SettingsItem(
                 id: "privacy.memoryOnThisMac",
-                title: "Keep my memory on this Mac only", detail: "History, dictionary and styles stay here. Questions to Clicky still go online.",
+                title: "Keep my memory on this Mac only", detail: "History, dictionary and styles stay here. Questions to the Voice Agent still go online.",
                 keywords: ["local", "memory", "cloud", "sync", "data"],
-                view: AnyView(SettingsRow(title: "Keep my memory on this Mac only", detail: "History, dictionary and styles stay here. Questions to Clicky still go online.") {
+                view: AnyView(SettingsRow(title: "Keep my memory on this Mac only", detail: "History, dictionary and styles stay here. Questions to the Voice Agent still go online.") {
                     SettingsToggle(settings: settings, keyPath: \.keepMemoryOnThisMac)
                 })),
             SettingsItem(
@@ -175,7 +175,7 @@ private struct PermissionRow: View {
 
     private var detail: String {
         if permission == .accessibility && !isGranted {
-            return permission.detail + " Can’t see OpenClicky in the list? The island’s permission card can drag it in for you, and reset a stale row."
+            return permission.detail + " Can’t see Agentic OS in the list? The island’s permission card can drag it in for you, and reset a stale row."
         }
         return permission.detail
     }
@@ -236,7 +236,7 @@ private struct DeleteTakesRow: View {
 }
 
 private struct PrivacySummaryNote: View {
-    static let text = "With This Mac as the engine, what you dictate stays on this Mac unless AI clean-up is on (edits need it too). The other engines send audio to the provider you chose. Questions to Clicky always go online with a picture of your screen, and fast voice and hands-free send your voice to OpenAI."
+    static let text = "With This Mac as the engine, what you dictate stays on this Mac unless AI clean-up is on (edits need it too). The other engines send audio to the provider you chose. Questions to the Voice Agent always go online with a picture of your screen, and fast voice and hands-free send your voice to OpenAI."
     @Environment(\.settingsSearchQuery) private var searchQuery
 
     var body: some View {

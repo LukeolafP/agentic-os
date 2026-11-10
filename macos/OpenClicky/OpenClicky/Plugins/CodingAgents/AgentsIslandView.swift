@@ -15,7 +15,7 @@ struct AgentsIslandComponent: IslandComponent {
     let symbolName = "terminal"
     let preferredHeight: CGFloat = 76
     let isPlugin = true
-    let settingsDetail: String? = "Follows Claude Code and Codex sessions on this Mac from their own logs. macOS asks once to let OpenClicky read Claude Code's sign-in for the plan limits."
+    let settingsDetail: String? = "Follows Claude Code and Codex sessions on this Mac from their own logs. macOS asks once to let Agentic OS read Claude Code's sign-in for the plan limits."
     func isAvailable(in context: IslandContext) -> Bool { true }
     @MainActor func makeView(companionManager: CompanionManager, model: NotchHUDModel) -> AnyView {
         let hud = companionManager.notchHUDManager

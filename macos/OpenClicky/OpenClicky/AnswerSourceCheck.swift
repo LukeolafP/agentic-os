@@ -41,7 +41,7 @@ nonisolated enum AnswerSourceCheck {
                 return status == 200 ? .works(seconds: Date().timeIntervalSince(started))
                     : .failed(status == 401 ? "Anthropic didn’t accept this key." : "Anthropic answered \(status).")
             case .openClickyAccount:
-                return .failed("The free credits are checked by asking Clicky.")
+                return .failed("The free credits are checked by asking the Voice Agent.")
             default:
                 let provider = try await AnswerProviderFactory.make(for: source, credentials: credentials, modelOverrides: modelOverrides)
                 let request = AnswerRequest(

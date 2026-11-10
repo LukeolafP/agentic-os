@@ -291,7 +291,7 @@ enum LiveTypingExclusions {
                                 ownProcessID: pid_t = getpid(), ownBundleID: String? = Bundle.main.bundleIdentifier) -> String? {
         let bundleIDs = [target.bundleID, fieldBundleID].compactMap { $0 }
         if target.processID == ownProcessID || (ownBundleID.map { bundleIDs.contains($0) } ?? false) {
-            return "openclicky's own window"
+            return "agentic os's own window"
         }
         if bundleIDs.contains(where: { terminalBundleIDs.contains($0) }) { return "a terminal" }
         return nil

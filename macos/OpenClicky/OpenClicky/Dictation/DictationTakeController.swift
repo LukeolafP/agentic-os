@@ -56,9 +56,9 @@ enum DictationEngineResolver {
         case .sarvam:
             return sarvamUnavailableReason(sarvamKey: sarvamKey)
         case .openclicky, .assemblyai:
-            guard isConfigured else { return "needs an openclicky account or your openai key" }
+            guard isConfigured else { return "needs an agentic os account or your openai key" }
             if kind == .account { return "needs your own key" }
-            if choice == .assemblyai && !signedIn { return "needs an openclicky account: assemblyai runs on openclicky's key" }
+            if choice == .assemblyai && !signedIn { return "needs an agentic os account: assemblyai runs on agentic os's key" }
             return nil
         }
     }
@@ -81,7 +81,7 @@ enum DictationEngineResolver {
 
     /// The ways to get a model, for a Hey Clicky edit or a history question asked with none set up.
     /// Apple's model comes first because it is free and needs nothing but the Mac.
-    static let howToGetAModelSentence = "apple intelligence on this mac, one of your own keys (settings → account), or an openclicky account"
+    static let howToGetAModelSentence = "apple intelligence on this mac, one of your own keys (settings → account), or an agentic os account"
 
     /// The model that polishes takes and answers Hey Clicky: Apple's on-device model where the Mac
     /// has it, else Sarvam with a key, else the person's

@@ -265,7 +265,7 @@ final class FirstRunTourController: ObservableObject {
         if voiceState == .listening { companionManager?.recordedVoice.stop() }
         // An answer was spoken and finished: that is asking Clicky, working.
         if step == .talk && previousVoiceState == .responding && voiceState == .idle && companionManager?.lastQuestionFailed != true {
-            succeed(with: "✓ that’s asking clicky. it can point at things too.", saying: .tourTalkDone)
+            succeed(with: "✓ that’s asking the voice agent. it can point at things too.", saying: .tourTalkDone)
         }
     }
 
@@ -604,7 +604,7 @@ final class FirstRunTourController: ObservableObject {
         if AccountCapabilities.current().usesAgent {
             return "hold control + option and say “add a note to my notes: buy milk”, or “organize my downloads folder so it’s easier to find things”."
         }
-        return "hold control + option and say “make a folder on my desktop called hello clicky”, or “open notes”."
+        return "hold control + option and say “make a folder on my desktop called hello agentic os”, or “open notes”."
     }
 
     /// fn is the dictation key but macOS still opens the emoji picker with it.
@@ -625,7 +625,7 @@ final class FirstRunTourController: ObservableObject {
         switch step {
         case .meet:
             return FirstRunTourCard(
-                step: .meet, title: "hi, i’m clicky",
+                step: .meet, title: "hi, i’m your voice agent",
                 detail: "your pointer’s new sidekick. i’ll show you three things. it takes about a minute.",
                 symbol: "hand.wave.fill",
                 primaryTitle: "let’s go", secondaryTitle: "skip tour")
@@ -639,7 +639,7 @@ final class FirstRunTourController: ObservableObject {
             let fnNote = needsFnFreed ? "macOS opens emoji on fn. let me switch that off first." : nil
             return FirstRunTourCard(
                 step: .dictate, title: "hold \(key) and say something",
-                detail: "try “hello openclicky, this is my first take”, then let go.",
+                detail: "try “hello agentic os, this is my first take”, then let go.",
                 keys: [key], status: status ?? fnNote, statusIsGood: statusIsGood,
                 microphoneName: companionManager.map { MicrophoneMenu.deviceName(settings: $0.dictationSettings) },
                 microphoneNeedsAttention: offersMicrophoneChange,

@@ -29,7 +29,7 @@ extension SettingsCatalog {
                     title: "Add events from the island", detail: "A + beside the week to add an event without opening Calendar."))),
             SettingsItem(
                 id: "calendar.access",
-                title: "Calendar access", detail: "OpenClicky reads your events only to show them on the island.",
+                title: "Calendar access", detail: "Agentic OS reads your events only to show them on the island.",
                 keywords: ["calendar", "permission", "privacy", "allow", "access"],
                 view: AnyView(CalendarAccessRow(store: store))),
         ]
@@ -81,10 +81,10 @@ private struct CalendarAccessRow: View {
 
     private var detail: String {
         switch store.access {
-        case .allowed: return "OpenClicky reads your events only to show them on the island."
+        case .allowed: return "Agentic OS reads your events only to show them on the island."
         case .notDetermined: return "macOS asks once; the island shows your events after you allow it."
-        case .writeOnly: return "OpenClicky may add events but not read them. Allow full access in System Settings."
-        case .denied, .restricted: return "Turned off for OpenClicky. Turn it on under Privacy & Security → Calendars."
+        case .writeOnly: return "Agentic OS may add events but not read them. Allow full access in System Settings."
+        case .denied, .restricted: return "Turned off for Agentic OS. Turn it on under Privacy & Security → Calendars."
         }
     }
 

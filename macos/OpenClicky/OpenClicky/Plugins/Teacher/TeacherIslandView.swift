@@ -18,7 +18,7 @@ struct TeacherIslandComponent: IslandComponent {
     let symbolName = "scribble.variable"
     let preferredHeight: CGFloat = 64
     let isPlugin = false
-    let settingsDetail: String? = "Ask \"teach me how Pythagoras works\" and Clicky draws it in handwriting in an empty part of your screen while it explains. What a drawing can't show comes up as a picture from Wikimedia Commons (only the search words are sent)."
+    let settingsDetail: String? = "Ask \"teach me how Pythagoras works\" and the Voice Agent draws it in handwriting in an empty part of your screen while it explains. What a drawing can't show comes up as a picture from Wikimedia Commons (only the search words are sent)."
     func isAvailable(in context: IslandContext) -> Bool { true }
     @MainActor func makeView(companionManager: CompanionManager, model: NotchHUDModel) -> AnyView {
         AnyView(TeacherIslandView(board: TeacherBoard.shared))

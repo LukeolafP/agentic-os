@@ -275,7 +275,7 @@ enum OpenClickyConfiguration {
     static let settingsFileUnreadableNotification = Notification.Name("openClickySettingsFileUnreadable")
 
     nonisolated static func unreadableSettingsFileSentence(reason: String) -> String {
-        "your settings file (~/.openclicky/shell.json) has a mistake in it: \(reason). openclicky won't change it until it's fixed."
+        "your settings file (~/.openclicky/shell.json) has a mistake in it: \(reason). agentic os won't change it until it's fixed."
     }
 
     /// Logs and shows the problem once per distinct problem (every refused write would repeat it).

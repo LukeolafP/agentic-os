@@ -272,7 +272,7 @@ final class CompanionAppDelegate: NSObject, NSApplicationDelegate {
                         group.cancelAll()
                     }
                     client.startListeningContinuously()
-                    client.requestResponse(instructions: "Greet the user in English in one short sentence as OpenClicky.")
+                    client.requestResponse(instructions: "Greet the user in English in one short sentence as the Agentic OS voice agent.")
                     var elapsed = 0.0
                     while elapsed < seconds {
                         try? await Task.sleep(nanoseconds: 3_000_000_000)
@@ -534,7 +534,7 @@ final class CompanionAppDelegate: NSObject, NSApplicationDelegate {
             Task { @MainActor in
                 let started = Date()
                 do {
-                    let data = try await MacVoice.shared.audio(for: "hi, i'm clicky. this is how i sound on this mac.")
+                    let data = try await MacVoice.shared.audio(for: "hi, i'm your voice agent. this is how i sound on this mac.")
                     let player = try AVAudioPlayer(data: data)
                     print("mac-voice-smoke: \(MacVoice.currentVoice()?.name ?? "default") rendered \(data.count / 1024) KB, \(String(format: "%.1f", player.duration)) s of audio in \(String(format: "%.2f", Date().timeIntervalSince(started))) s")
                     print("mac-voice-smoke: installed \(MacVoice.choices().map(\.label).prefix(8).joined(separator: ", "))")

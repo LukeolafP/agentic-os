@@ -488,7 +488,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Agentic OS Debug";
 				INFOPLIST_KEY_CFBundleName = "Agentic OS";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSScreenCaptureUsageDescription = "OpenClicky needs screen recording access to see your screen and help you.";
+				INFOPLIST_KEY_NSScreenCaptureUsageDescription = "Agentic OS needs screen recording access to see your screen and help you.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -529,7 +529,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Agentic OS";
 				INFOPLIST_KEY_CFBundleName = "Agentic OS";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSScreenCaptureUsageDescription = "OpenClicky needs screen recording access to see your screen and help you.";
+				INFOPLIST_KEY_NSScreenCaptureUsageDescription = "Agentic OS needs screen recording access to see your screen and help you.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",

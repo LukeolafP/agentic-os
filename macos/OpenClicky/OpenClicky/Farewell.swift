@@ -13,12 +13,12 @@ struct Farewell: Equatable {
     let text: String
 
     static let all: [Farewell] = [
-        Farewell(text: "bye for now. ⌘ space, type openclicky, and i'm back."),
-        Farewell(text: "off to nap in your applications folder. ⌘ space → openclicky wakes me."),
-        Farewell(text: "fine, i'll go. you'll miss me by lunch. ⌘ space → openclicky"),
+        Farewell(text: "bye for now. ⌘ space, type agentic os, and i'm back."),
+        Farewell(text: "off to nap in your applications folder. ⌘ space → agentic os wakes me."),
+        Farewell(text: "fine, i'll go. you'll miss me by lunch. ⌘ space → agentic os"),
         Farewell(text: "exit, pursued by a bear. ⌘ space brings me back."),
-        Farewell(text: "it was a pleasure hovering with you. spotlight “openclicky” to call me back."),
-        Farewell(text: "clocking out. your pointer is all yours. ⌘ space → openclicky when you need a hand."),
+        Farewell(text: "it was a pleasure hovering with you. spotlight “agentic os” to call me back."),
+        Farewell(text: "clocking out. your pointer is all yours. ⌘ space → agentic os when you need a hand."),
     ]
 
     static func random() -> Farewell {

@@ -323,7 +323,7 @@ struct AppConnectPromptView: View {
                     }
                     .buttonStyle(.plain)
                     .pointerCursor()
-                    .help("don't ask again; \(prompt.appName)'s skill is left out of what clicky knows")
+                    .help("don't ask again; \(prompt.appName)'s skill is left out of what the voice agent knows")
                     Spacer(minLength: 8)
                     answerButton(title: "not now", isPrimary: false) { controller.answer(.notNow) }
                     answerButton(title: "connect", isPrimary: true) { controller.answer(.yes) }
@@ -342,14 +342,14 @@ struct AppConnectPromptView: View {
 
     private var headline: String {
         switch prompt.stage {
-        case .ask: return "connect \(prompt.appName.lowercased()) to openclicky?"
+        case .ask: return "connect \(prompt.appName.lowercased()) to agentic os?"
         case .composioMissing: return "\(prompt.appName.lowercased()) skill is on"
         }
     }
 
     private var detail: String {
         switch prompt.stage {
-        case .ask: return "clicky could act in your \(prompt.appName.lowercased()) account when you ask."
+        case .ask: return "the voice agent could act in your \(prompt.appName.lowercased()) account when you ask."
         case .composioMissing: return "account actions need composio: set COMPOSIO_MCP_URL in shell.json."
         }
     }

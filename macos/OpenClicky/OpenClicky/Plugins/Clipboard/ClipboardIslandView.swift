@@ -15,7 +15,7 @@ struct ClipboardIslandComponent: IslandComponent {
     let symbolName = "list.clipboard"
     let preferredHeight: CGFloat = 130
     let isPlugin = true
-    let settingsDetail: String? = "Keeps the last 30 things you copied while OpenClicky runs, in memory only. Copies password managers mark as private are skipped."
+    let settingsDetail: String? = "Keeps the last 30 things you copied while Agentic OS runs, in memory only. Copies password managers mark as private are skipped."
 
     @MainActor init() {
         // The list should hold what was copied since launch, not since it was first opened; the

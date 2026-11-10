@@ -55,9 +55,9 @@ enum BackendPolishError: LocalizedError, Equatable {
 
     var errorDescription: String? {
         switch self {
-        case .invalidBackendURL: return "the openclicky backend address in settings isn't a valid url."
-        case .refused(let status, let message): return "openclicky refused the clean-up (\(status)): \(message)"
-        case .unreadable: return "openclicky's clean-up answer had no text in it."
+        case .invalidBackendURL: return "the agentic os backend address in settings isn't a valid url."
+        case .refused(let status, let message): return "agentic os refused the clean-up (\(status)): \(message)"
+        case .unreadable: return "agentic os's clean-up answer had no text in it."
         }
     }
 }
@@ -65,7 +65,7 @@ enum BackendPolishError: LocalizedError, Equatable {
 /// Polishes through OpenAI's chat completions: straight to OpenAI on the person's own OpenAI key,
 /// else through the OpenClicky backend's OpenAI-shaped chat route.
 struct BackendTakePolisher: TakePolisher {
-    var displayName: String { "OpenClicky" }
+    var displayName: String { "Agentic OS" }
     func polish(system: String, user: String) async throws -> String {
         let body: [String: Any] = [
             "model": "gpt-4o-mini",
@@ -133,7 +133,7 @@ extension AccountPolishError: LocalizedError {
     var errorDescription: String? {
         if case .limit(let limit) = self, !limit.message.isEmpty { return limit.message }
         if case .unavailable(503) = self { return AccountLimitError.serviceTroubleMessage }
-        return "couldn't reach openclicky right now."
+        return "couldn't reach agentic os right now."
     }
 }
 
@@ -148,7 +148,7 @@ struct AccountTakePolisher: TakePolisher {
     /// (a request sent without one gets its 401 back, never a refresh).
     var authorize: (inout URLRequest) -> Void = { OpenClickyConfiguration.authorize(&$0) }
 
-    var displayName: String { "OpenClicky" }
+    var displayName: String { "Agentic OS" }
 
     func polish(system: String, user: String) async throws -> String {
         guard let url = URL(string: "\(OpenClickyConfiguration.backendBaseURL)/v1/polish") else { throw AccountPolishError.unavailable(0) }
