@@ -20,8 +20,14 @@ enum AccountVoiceDeadline {
     /// Later pieces are fetched while earlier ones play, so they have room before anyone hears a gap.
     static let laterPieceSeconds: TimeInterval = 6
 
+    /// Agentic OS: Petra's backend on this Mac makes the Voice Agent's voice itself (Voxtral), which
+    /// can take a few seconds a sentence; it gets longer before this Mac's voice speaks instead.
+    static let localFirstPieceSeconds: TimeInterval = 10
+    static let localLaterPieceSeconds: TimeInterval = 15
+
     static func seconds(forPieceNumber pieceNumber: Int) -> TimeInterval {
-        pieceNumber == 0 ? firstPieceSeconds : laterPieceSeconds
+        if OpenClickyConfiguration.backendIsLocal { return pieceNumber == 0 ? localFirstPieceSeconds : localLaterPieceSeconds }
+        return pieceNumber == 0 ? firstPieceSeconds : laterPieceSeconds
     }
 }
 

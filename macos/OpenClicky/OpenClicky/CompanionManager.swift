@@ -86,6 +86,9 @@ final class CompanionManager: ObservableObject {
 
     /// Latest milestone from a running agent turn ("ran: …", "started thread …"), shown in the panel.
     @Published var agentActivityText: String?   // Agentic OS: AgenticOSHands sets it while a Clicky agent works
+    /// Agentic OS: what the Voice Agent is saying on its own (an announcement from the backend's
+    /// /events), shown as the island's caption line while it is spoken (VoiceAgentAnnouncer).
+    @Published var announcementText: String?
 
     /// Files the last agent turn created or changed.
     @Published private(set) var lastAgentArtifacts: [String] = []
@@ -1548,7 +1551,9 @@ final class CompanionManager: ObservableObject {
         AppLog.append(line)
     }
 
-    private func handleShortcutTransition(_ transition: BuddyPushToTalkShortcut.ShortcutTransition) {
+    func handleShortcutTransition(_ transition: BuddyPushToTalkShortcut.ShortcutTransition) {
+        // Agentic OS: ⌃⌥ while an announcement is spoken stops it and listens (barge-in).
+        if case .pressed = transition { VoiceAgentAnnouncer.shared.talkPressed() }
         if usesRealtimeVoice {
             handleRealtimeShortcutTransition(transition)
             return
@@ -2272,7 +2277,7 @@ final class CompanionManager: ObservableObject {
     /// voice and the pointer stop, a guide ends, and the island goes back to rest. Returns false
     /// when there was nothing to stop.
     @discardableResult
-    func stopAskLane(from source: String) -> Bool {
+    func stopAskLane(from source: String, caption: String? = "stopped") -> Bool {
         guard askLaneCanBeStopped else { return false }
         AppLog.append("ask: stopped (\(source))")
         if askOutcome != .resolved {
@@ -2288,7 +2293,7 @@ final class CompanionManager: ObservableObject {
         clearDetectedElementLocation()
         // A cancelled answer skips its own reset to idle.
         voiceState = .idle
-        showAskCaption("stopped", holdSeconds: 1.5)
+        if let caption { showAskCaption(caption, holdSeconds: 1.5) } else { dismissCursorCaption() }
         scheduleTransientHideIfNeeded()
         return true
     }
@@ -2441,7 +2446,8 @@ final class CompanionManager: ObservableObject {
     /// returned as soon as playback began, so nothing could stop it and `.responding` was set
     /// after the voice had already started. Returns once the reply has been said, was interrupted,
     /// or the voice failed and the system voice has said what was left.
-    private func speakWholeReply(_ replyText: String) async {
+    @discardableResult
+    func speakWholeReply(_ replyText: String) async -> Bool {
         let answerSpeaker = makeAnswerSpeaker(
             onVoiceStarts: { [weak self] in
                 self?.voiceState = .responding
@@ -2461,15 +2467,18 @@ final class CompanionManager: ObservableObject {
             } onCancel: {
                 answerPlayback.cancel()
             }
+            return !Task.isCancelled
         } catch let failure as SpeechQueue.Failure {
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled else { return false }
             let nsError = failure.underlyingError as NSError
             print("⚠️ TTS failed after agent run (\(nsError.localizedDescription)); using the system voice")
             AppLog.append("agent: voice failed (\(nsError.code)); using the system voice")
             speakWithSystemVoice(failure.unspokenText.joined(separator: " "))
             await waitForSystemVoiceNoticeToEnd()
+            return !Task.isCancelled
         } catch {
             // Interrupted by a new question or the stop button.
+            return false
         }
     }
 
@@ -2829,6 +2838,9 @@ final class CompanionManager: ObservableObject {
     enum AskOutcome { case resolved, listening, transcribing }
     private var askOutcome: AskOutcome = .resolved
     private var askLiveWordsShownSincePress = false
+    /// Agentic OS: whether the ⌃⌥ turn has shown any words yet (the announcement's listening turn
+    /// ends on silence once something was heard).
+    var askHeardWordsSincePress: Bool { askLiveWordsShownSincePress }
     private var askDictationOutcomeCancellables: Set<AnyCancellable> = []
 
     /// Follows the dictation session for the ask lane: its end without a question means nothing was

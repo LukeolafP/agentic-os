@@ -1140,9 +1140,10 @@ final class NotchHUDManager {
             }
             .store(in: &busyCancellables)
         companionManager.$voiceState
-            .combineLatest(companionManager.$agentActivityText, companionManager.$lastTranscript)
-            .map { voiceState, agentActivityText, lastTranscript in
-                NotchCompactStatusView.detailLine(voiceState: voiceState, agentActivityText: agentActivityText, lastTranscript: lastTranscript) != nil
+            .combineLatest(companionManager.$agentActivityText, companionManager.$lastTranscript, companionManager.$announcementText)
+            .map { voiceState, agentActivityText, lastTranscript, announcementText in
+                NotchCompactStatusView.detailLine(voiceState: voiceState, agentActivityText: agentActivityText, lastTranscript: lastTranscript,
+                                                  announcementText: announcementText) != nil
             }
             .removeDuplicates()
             .sink { [weak self] hasDetailLine in
@@ -1667,7 +1668,8 @@ struct NotchCompactStatusView: View {
             if let detailLine = Self.detailLine(
                 voiceState: companionManager.voiceState,
                 agentActivityText: companionManager.agentActivityText,
-                lastTranscript: companionManager.lastTranscript
+                lastTranscript: companionManager.lastTranscript,
+                announcementText: companionManager.announcementText
             ) {
                 Text(detailLine)
                     .font(.system(size: 14))
@@ -1753,8 +1755,10 @@ struct NotchCompactStatusView: View {
 
     /// The strip's caption line, or nil for a strip with only its status. The HUD manager asks the
     /// same question to size the island, so it is static and takes the published values.
-    static func detailLine(voiceState: CompanionVoiceState, agentActivityText: String?, lastTranscript: String?) -> String? {
+    static func detailLine(voiceState: CompanionVoiceState, agentActivityText: String?, lastTranscript: String?, announcementText: String? = nil) -> String? {
         if voiceState == .idle { return nil }
+        // Agentic OS: the Voice Agent speaking first says what it is saying.
+        if voiceState == .responding, let announcementText, !announcementText.isEmpty { return announcementText }
         if let agentActivityText, !agentActivityText.isEmpty { return agentActivityText }
         if voiceState == .responding, let lastTranscript, !lastTranscript.isEmpty { return "“\(lastTranscript)”" }
         return nil
@@ -1782,6 +1786,7 @@ struct NotchCompactStatusView: View {
             if isDictating { return "typing it in" }
             return companionManager.agentActivityText == nil ? "looking at your screen" : "working"
         case .responding:
+            if companionManager.announcementText != nil { return "voice agent" }
             return companionManager.answeringSourceName.map { "speaking · \($0)" } ?? "speaking"
         }
     }
