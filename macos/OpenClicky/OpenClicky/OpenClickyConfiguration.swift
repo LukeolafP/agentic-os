@@ -77,6 +77,9 @@ struct OpenClickyShellSettings: Codable {
     var elevenLabsApiKey: String? = nil
     var googleCloudApiKey: String? = nil
     var amazonPollyCredentials: String? = nil
+    /// Agentic OS: the Voice Agent's voice, an id from the backend's GET /voices ("petra", or
+    /// "elevenlabs:<voice_id>"). The backend reads it on every /tts call. Settings → Agentic OS.
+    var voiceAgentVoice: String = "petra"
     /// Which inbox "check my email" and "draft an email" use: "mail", "gmail", or nil for
     /// automatic (Apple Mail when it has accounts here, else Gmail). Settings → Voice.
     var emailApp: String? = nil
@@ -135,6 +138,7 @@ extension OpenClickyShellSettings {
         elevenLabsApiKey = try container.decodeIfPresent(String.self, forKey: .elevenLabsApiKey)
         googleCloudApiKey = try container.decodeIfPresent(String.self, forKey: .googleCloudApiKey)
         amazonPollyCredentials = try container.decodeIfPresent(String.self, forKey: .amazonPollyCredentials)
+        voiceAgentVoice = try container.decodeIfPresent(String.self, forKey: .voiceAgentVoice) ?? defaults.voiceAgentVoice
         emailApp = try container.decodeIfPresent(String.self, forKey: .emailApp)
         spotifyCredentials = try container.decodeIfPresent(String.self, forKey: .spotifyCredentials)
         kokoroSpeaker = try container.decodeIfPresent(Int.self, forKey: .kokoroSpeaker)
@@ -401,6 +405,15 @@ enum OpenClickyConfiguration {
         var url = settings.backendUrl.trimmingCharacters(in: .whitespacesAndNewlines)
         while url.hasSuffix("/") { url.removeLast() }
         return url.isEmpty ? hostedBackendURL : url
+    }
+
+    /// Agentic OS: true when model calls go to the backend on this Mac (127.0.0.1 or localhost),
+    /// which speaks in the Voice Agent's voice, polishes dictation and sends announcements.
+    static var backendIsLocal: Bool { isLocalBackend(backendBaseURL) }
+
+    nonisolated static func isLocalBackend(_ url: String) -> Bool {
+        guard let host = URL(string: url.trimmingCharacters(in: .whitespacesAndNewlines))?.host?.lowercased() else { return false }
+        return host == "127.0.0.1" || host == "localhost" || host == "::1"
     }
 
     static var backendHostDescription: String {

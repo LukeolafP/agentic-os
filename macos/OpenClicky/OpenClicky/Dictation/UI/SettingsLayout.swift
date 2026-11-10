@@ -29,7 +29,14 @@ enum SettingsLayout {
         let itemIDs: [String]
     }
 
-    static let groups: [Group] = dictationGroups + clickyGroups + islandGroups + accountGroups + privacyGroups + generalGroups
+    static let groups: [Group] = agenticOSGroups + dictationGroups + clickyGroups + islandGroups + accountGroups + privacyGroups + generalGroups
+
+    /// Agentic OS: the Voice Agent's voice, from Petra's backend (SettingsAgenticOSPage.swift).
+    private static let agenticOSGroups: [Group] = [
+        Group(page: .agenticOS, title: "Voice", itemIDs: [
+            "agenticos.voice", "agenticos.sample", "agenticos.defaultVoice", "agenticos.elevenLabsKey", "agenticos.voiceNote",
+        ]),
+    ]
 
     private static let dictationGroups: [Group] = [
         Group(page: .dictation, title: "", itemIDs: [

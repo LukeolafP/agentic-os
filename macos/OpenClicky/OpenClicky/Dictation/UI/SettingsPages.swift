@@ -19,23 +19,24 @@ import SwiftUI
 /// OpenClicky does (Dictation, Clicky), where it lives (Island), what pays for it (Keys & Account),
 /// what it may see (Privacy), then General. `SettingsLayout` says which rows each page holds.
 enum DictationSettingsPage: String, CaseIterable, Identifiable {
-    case dictation, clicky, island, account, privacy, general, orb, calendars
+    case agenticOS, dictation, clicky, island, account, privacy, general, orb, calendars
     var id: String { rawValue }
 
     /// The pages the sidebar lists, in order.
-    static let sidebarPages: [DictationSettingsPage] = [.dictation, .clicky, .island, .account, .privacy, .general]
+    static let sidebarPages: [DictationSettingsPage] = [.agenticOS, .dictation, .clicky, .island, .account, .privacy, .general]
 
     /// The sidebar page a page opened from a row belongs to; a sidebar page is its own.
     var sidebarPage: DictationSettingsPage {
         switch self {
         case .orb: return .dictation
         case .calendars: return .island
-        case .dictation, .clicky, .island, .account, .privacy, .general: return self
+        case .agenticOS, .dictation, .clicky, .island, .account, .privacy, .general: return self
         }
     }
 
     var title: String {
         switch self {
+        case .agenticOS: return "Agentic OS"
         case .dictation: return "Dictation"
         case .clicky: return "Voice Agent"
         case .island: return "Island"
@@ -55,6 +56,7 @@ enum DictationSettingsPage: String, CaseIterable, Identifiable {
     /// The page's header card: one line on what lives here.
     var subtitle: String {
         switch self {
+        case .agenticOS: return "The Voice Agent’s voice, from Petra’s backend on this Mac."
         case .dictation: return "Hold fn, speak, and the words land at your cursor."
         case .clicky: return "Hold ⌃⌥ and ask about what’s on screen."
         case .island: return "What lives around the notch."
@@ -69,6 +71,7 @@ enum DictationSettingsPage: String, CaseIterable, Identifiable {
     /// The sidebar icon, white on `tint`.
     var symbol: String {
         switch self {
+        case .agenticOS: return "waveform"
         case .dictation: return "mic.fill"
         case .clicky: return "sparkle"
         case .island: return "rectangle.topthird.inset.filled"
@@ -82,6 +85,7 @@ enum DictationSettingsPage: String, CaseIterable, Identifiable {
 
     var tint: Color {
         switch self {
+        case .agenticOS: return Color(red: 0.95, green: 0.45, blue: 0.2)
         case .dictation, .orb: return Color(red: 0.039, green: 0.518, blue: 1.0)
         case .clicky: return Color(red: 0.686, green: 0.322, blue: 0.871)
         case .island, .calendars: return Color(red: 0.11, green: 0.11, blue: 0.118)

@@ -99,7 +99,10 @@ enum SpeechVoiceChoice: String, CaseIterable, Identifiable {
                         accountVoiceIsResting: Bool = false) -> SpeechVoiceChoice {
         let picked = SpeechVoiceChoice(stored: settings.speechVoice)
         let kokoroCantSpeakLanguage = picked == .kokoro && KokoroVoice.speaker(forLanguage: languageCode, picked: nil) == nil
-        let automaticCandidates = accountVoiceIsResting ? automaticOrder.filter { $0 != .account } : automaticOrder
+        // Agentic OS: on the local backend its /tts speaks in the Voice Agent's voice (Settings →
+        // Agentic OS), so Automatic tries it first, before any key's own voice.
+        let order = OpenClickyConfiguration.isLocalBackend(settings.backendUrl) ? [.account] + automaticOrder.filter { $0 != .account } : automaticOrder
+        let automaticCandidates = accountVoiceIsResting ? order.filter { $0 != .account } : order
         let candidates = picked == .automatic || kokoroCantSpeakLanguage ? automaticCandidates : [picked]
         return candidates.first {
             canSpeak($0, settings: settings, hasAccount: hasAccount, kokoroInstalled: kokoroInstalled, languageCode: languageCode)
