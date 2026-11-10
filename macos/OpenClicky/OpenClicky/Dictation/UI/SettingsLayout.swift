@@ -34,7 +34,7 @@ enum SettingsLayout {
     /// Agentic OS: the Voice Agent's voice, from Petra's backend (SettingsAgenticOSPage.swift).
     private static let agenticOSGroups: [Group] = [
         Group(page: .agenticOS, title: "Voice", itemIDs: [
-            "agenticos.voice", "agenticos.sample", "agenticos.defaultVoice", "agenticos.elevenLabsKey", "agenticos.voiceNote",
+            "agenticos.voice", "agenticos.voiceBackendNote", "agenticos.sample", "agenticos.defaultVoice", "agenticos.elevenLabsKey", "agenticos.voiceNote",
         ]),
     ]
 

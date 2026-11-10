@@ -24,6 +24,11 @@ extension SettingsCatalog {
                 keywords: ["voice", "petra", "voxtral", "elevenlabs", "eleven labs", "tts", "speech", "speaker", "voice agent"],
                 view: AnyView(VoiceAgentVoiceRow())),
             SettingsItem(
+                id: "agenticos.voiceBackendNote",
+                title: "Voices the backend couldn’t list", keywords: ["elevenlabs", "permission", "voices_read", "error"],
+                chrome: .footer,
+                view: AnyView(VoiceAgentBackendNote())),
+            SettingsItem(
                 id: "agenticos.sample",
                 title: "Play sample", detail: "Says a line in the voice picked above.",
                 keywords: ["preview", "sample", "listen", "test", "voice"],
@@ -63,6 +68,8 @@ final class VoiceAgentVoices: ObservableObject {
 
     @Published private(set) var voices: [Voice] = []
     @Published private(set) var status: String?
+    /// What the backend said beside its list ("error" in GET /voices): why some voices are missing.
+    @Published private(set) var backendNote: String?
     @Published private(set) var isLoading = false
     @Published private(set) var isPlaying = false
     @Published private(set) var selected: String = OpenClickyConfiguration.settings.voiceAgentVoice
@@ -90,6 +97,10 @@ final class VoiceAgentVoices: ObservableObject {
                     guard let id = entry["id"] as? String, !id.isEmpty else { return nil }
                     return Voice(id: id, name: (entry["name"] as? String) ?? id, provider: (entry["provider"] as? String) ?? "")
                 }
+                // The backend's own word on a voice source it could not list (an ElevenLabs key
+                // without the voices_read permission, say); gone once a refresh lists cleanly.
+                let note = (object["error"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                backendNote = note.isEmpty ? nil : note
                 // shell.json is the truth; the backend's "selected" only fills in when the app has none.
                 if let backendSelected = object["selected"] as? String, !backendSelected.isEmpty,
                    OpenClickyConfiguration.settings.voiceAgentVoice.isEmpty {
@@ -169,6 +180,17 @@ private struct VoiceAgentVoiceRow: View {
             }
         }
         .onAppear { if model.voices.isEmpty { model.refresh() } }
+    }
+}
+
+/// The backend's sentence about voices it could not list, under the picker.
+private struct VoiceAgentBackendNote: View {
+    @ObservedObject private var model = VoiceAgentVoices.shared
+
+    var body: some View {
+        if let note = model.backendNote {
+            SettingsFootnote(text: note)
+        }
     }
 }
 
