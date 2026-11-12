@@ -56,7 +56,8 @@ enum AgenticOS {
             NSWorkspace.shared.open([url], withApplicationAt: chrome, configuration: NSWorkspace.OpenConfiguration())
             return
         }
-        var parts = URLComponents(string: "obsidian://web-open")!
+        // gtd-open: the GTD Rubric plugin refreshes a tab that already shows the page instead of opening another
+        var parts = URLComponents(string: "obsidian://gtd-open")!
         parts.queryItems = [URLQueryItem(name: "url", value: url.absoluteString)]
         if let obsidian = parts.url { NSWorkspace.shared.open(obsidian) }
     }
