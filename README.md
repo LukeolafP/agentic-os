@@ -10,7 +10,7 @@ It is a fork of [OpenClicky](https://github.com/prasanthsasikumar/openclicky) (M
 builds on [Clicky](https://github.com/farzaa/clicky) by Farza. OpenClicky's own README is kept as
 [README-OpenClicky.md](README-OpenClicky.md). Everything the program talks to (Petra, the bridge,
 the dashboards, the Obsidian plugin) is installed by the
-**[agentic-os-setup](https://github.com/__GITHUB_USER__/agentic-os-setup)** repository; install
+**[agentic-os-setup](https://github.com/LukeolafP/agentic-os-setup)** repository; install
 that first.
 
 ## Mac
