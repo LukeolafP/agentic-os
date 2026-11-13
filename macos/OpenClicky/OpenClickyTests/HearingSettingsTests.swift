@@ -46,6 +46,17 @@ struct HearingSettingsTests {
         #expect(MicrophoneDevices.deviceToSelect(preferredUID: nil, connected: [jack, usb], defaultDeviceID: jack.deviceID).deviceID == jack.deviceID)
     }
 
+    /// A Bluetooth headset as the Mac's default input: "automatic" records from the built-in
+    /// microphone, so the headset stays in music mode. Chosen explicitly, the headset is used.
+    @Test func automaticSkipsABluetoothHeadsetForTheBuiltInMicrophone() {
+        let headset = MicrophoneDevices.ConnectedInput(deviceID: 151, uid: "28-11-A5-00-00-00:input", isBluetooth: true)
+        let builtInMicrophone = MicrophoneDevices.ConnectedInput(deviceID: 42, uid: MicrophoneDevices.builtInMicrophoneUID)
+        #expect(MicrophoneDevices.deviceToSelect(preferredUID: nil, connected: [headset, builtInMicrophone], defaultDeviceID: headset.deviceID).deviceID == builtInMicrophone.deviceID)
+        #expect(MicrophoneDevices.deviceToSelect(preferredUID: headset.uid, connected: [headset, builtInMicrophone], defaultDeviceID: headset.deviceID).deviceID == headset.deviceID)
+        // no built-in microphone (a closed lid): the headset is all there is
+        #expect(MicrophoneDevices.deviceToSelect(preferredUID: nil, connected: [headset], defaultDeviceID: headset.deviceID).deviceID == headset.deviceID)
+    }
+
     @Test func anUnpluggedChosenMicrophoneFallsBackToTheDefaultAndIsReported() {
         let choice = MicrophoneDevices.deviceToSelect(preferredUID: usb.uid, connected: [builtIn], defaultDeviceID: builtIn.deviceID)
         #expect(choice.deviceID == builtIn.deviceID)

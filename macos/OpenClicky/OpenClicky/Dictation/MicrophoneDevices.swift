@@ -35,7 +35,7 @@ nonisolated enum MicrophoneDevices {
     /// The name of the microphone a take would record from right now, for "Automatic (…)".
     static func effectiveInputName(preferredUID: String?) -> String? {
         let connected = allDeviceIDs().compactMap { deviceID in
-            stringProperty(of: deviceID, kAudioDevicePropertyDeviceUID).map { ConnectedInput(deviceID: deviceID, uid: $0) }
+            stringProperty(of: deviceID, kAudioDevicePropertyDeviceUID).map { ConnectedInput(deviceID: deviceID, uid: $0, isBluetooth: isBluetooth(deviceID)) }
         }
         let choice = deviceToSelect(preferredUID: preferredUID, connected: connected, defaultDeviceID: defaultInputDeviceID())
         guard let deviceID = choice.deviceID else { return nil }
@@ -65,7 +65,7 @@ nonisolated enum MicrophoneDevices {
     @discardableResult
     static func apply(preferredUID: String?, to engine: AVAudioEngine) -> Bool {
         let connected = allDeviceIDs().compactMap { deviceID in
-            stringProperty(of: deviceID, kAudioDevicePropertyDeviceUID).map { ConnectedInput(deviceID: deviceID, uid: $0) }
+            stringProperty(of: deviceID, kAudioDevicePropertyDeviceUID).map { ConnectedInput(deviceID: deviceID, uid: $0, isBluetooth: isBluetooth(deviceID)) }
         }
         let defaultDeviceID = defaultInputDeviceID()
         let choice = deviceToSelect(preferredUID: preferredUID, connected: connected, defaultDeviceID: defaultDeviceID)
@@ -95,7 +95,7 @@ nonisolated enum MicrophoneDevices {
     /// can only record from the default, so the realtime lane asks this before turning it on.
     static func choiceDiffersFromDefault(preferredUID: String?) -> Bool {
         let connected = allDeviceIDs().compactMap { deviceID in
-            stringProperty(of: deviceID, kAudioDevicePropertyDeviceUID).map { ConnectedInput(deviceID: deviceID, uid: $0) }
+            stringProperty(of: deviceID, kAudioDevicePropertyDeviceUID).map { ConnectedInput(deviceID: deviceID, uid: $0, isBluetooth: isBluetooth(deviceID)) }
         }
         let defaultDeviceID = defaultInputDeviceID()
         let choice = deviceToSelect(preferredUID: preferredUID, connected: connected, defaultDeviceID: defaultDeviceID)
@@ -111,6 +111,8 @@ nonisolated enum MicrophoneDevices {
     struct ConnectedInput: Equatable {
         let deviceID: AudioDeviceID
         let uid: String
+        /// A Bluetooth headset's microphone: opening it switches the headset into call mode.
+        var isBluetooth: Bool = false
     }
 
     /// The headphone jack's input. macOS lists it, and often makes it the default input, as soon as
@@ -121,13 +123,18 @@ nonisolated enum MicrophoneDevices {
 
     /// Which device a take records from: the chosen one when it is connected, else the default,
     /// except that a default which is the headphone jack gives way to the built-in microphone
-    /// (choose the jack explicitly for a headset with a microphone).
+    /// (choose the jack explicitly for a headset with a microphone), and so does a Bluetooth
+    /// headset (Agentic OS, 13 Nov 2026): recording from its microphone switches it from music
+    /// into call mode, which made everything else playing sound poor while the Voice Agent
+    /// listened. Choose the headset explicitly in Settings to talk through it anyway.
     /// `chosenUIDIsMissing` is true when a device was chosen but is not among `connected`.
     static func deviceToSelect(preferredUID: String?, connected: [ConnectedInput],
                                defaultDeviceID: AudioDeviceID?) -> (deviceID: AudioDeviceID?, chosenUIDIsMissing: Bool) {
         guard let preferredUID, !preferredUID.isEmpty else {
             let defaultUID = connected.first(where: { $0.deviceID == defaultDeviceID })?.uid
-            if defaultUID == headphoneJackInputUID, let builtIn = connected.first(where: { $0.uid == builtInMicrophoneUID }) {
+            let defaultIsBluetooth = connected.first(where: { $0.deviceID == defaultDeviceID })?.isBluetooth ?? false
+            if defaultUID == headphoneJackInputUID || defaultIsBluetooth,
+               let builtIn = connected.first(where: { $0.uid == builtInMicrophoneUID }) {
                 return (builtIn.deviceID, false)
             }
             return (defaultDeviceID, false)
@@ -137,6 +144,14 @@ nonisolated enum MicrophoneDevices {
     }
 
     // MARK: CoreAudio
+
+    private static func isBluetooth(_ deviceID: AudioDeviceID) -> Bool {
+        var address = AudioObjectPropertyAddress(mSelector: kAudioDevicePropertyTransportType, mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)
+        var transport: UInt32 = 0
+        var size = UInt32(MemoryLayout<UInt32>.size)
+        guard AudioObjectGetPropertyData(deviceID, &address, 0, nil, &size, &transport) == noErr else { return false }
+        return transport == kAudioDeviceTransportTypeBluetooth || transport == kAudioDeviceTransportTypeBluetoothLE
+    }
 
     private static func allDeviceIDs() -> [AudioDeviceID] {
         var address = AudioObjectPropertyAddress(mSelector: kAudioHardwarePropertyDevices, mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)

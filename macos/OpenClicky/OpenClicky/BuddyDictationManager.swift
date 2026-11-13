@@ -321,20 +321,16 @@ final class BuddyDictationManager: NSObject, ObservableObject {
         print("🎙️ BuddyDictationManager: provider ready, starting audio engine")
 
         // Settings → microphone: a chosen input device, else the system default.
-        let usesChosenMicrophone = MicrophoneDevices.choiceDiffersFromDefault(preferredUID: preferredMicrophoneUID)
-        if audioEngineHasChosenMicrophone && !usesChosenMicrophone {
-            audioEngine = AVAudioEngine()
-        }
-        audioEngineHasChosenMicrophone = usesChosenMicrophone
+        // Agentic OS: a fresh engine for every take. A kept engine held on to device IDs that a
+        // Bluetooth headset retires when it switches profile ("no object with given ID"), and its
+        // cached format then no longer matched the microphone.
+        audioEngine.inputNode.removeTap(onBus: 0)
+        audioEngine.stop()
+        audioEngine = AVAudioEngine()
+        audioEngineHasChosenMicrophone = MicrophoneDevices.choiceDiffersFromDefault(preferredUID: preferredMicrophoneUID)
         MicrophoneDevices.apply(preferredUID: preferredMicrophoneUID, to: audioEngine)
-        let inputNode = audioEngine.inputNode
-        let inputFormat = inputNode.outputFormat(forBus: 0)
-        // Which microphone a take records from, so a log of takes that heard nothing says whether
-        // the input was a silent device (a virtual one, the headphone jack) or the engine.
-        AppLog.append("microphone: \(MicrophoneDevices.effectiveInputName(preferredUID: preferredMicrophoneUID) ?? "none"), \(Int(inputFormat.sampleRate)) Hz, \(inputFormat.channelCount) ch")
 
-        inputNode.removeTap(onBus: 0)
-        // AVAudioEngine calls this block on the CoreAudio render thread, but `AVAudioNodeTapBlock`
+        // AVAudioEngine calls the tap block on the CoreAudio render thread, but `AVAudioNodeTapBlock`
         // is not `@Sendable`, so the compiler silently treats the closure as main-actor isolated
         // like the rest of this class and reports nothing. Reading `self.activeTranscriptionSession`
         // in here therefore raced the main actor reassigning it in `startRecognitionSession` and
@@ -342,14 +338,59 @@ final class BuddyDictationManager: NSObject, ObservableObject {
         // The session is captured by value instead: this tap feeds the session it was installed
         // for, and nothing else, for as long as it is installed.
         let audioRetentionSink = self.audioRetentionSink
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: inputFormat) { [weak self, activeTranscriptionSession] buffer, _ in
+        let tapBlock: AVAudioNodeTapBlock = { [weak self, activeTranscriptionSession] buffer, _ in
             activeTranscriptionSession.appendAudioBuffer(buffer)
             audioRetentionSink?(buffer)
             self?.updateAudioPowerLevel(from: buffer)
         }
 
+        // Opening a headset's microphone can switch it into call mode, which changes the sample rate
+        // between reading the format and installing the tap; installTap then throws an Objective-C
+        // exception that Swift cannot catch. It is caught here, and the take tries once more on a
+        // new engine after the headset has settled.
+        for attempt in 1...2 {
+            let inputNode = audioEngine.inputNode
+            let inputFormat = inputNode.outputFormat(forBus: 0)
+            // Which microphone a take records from, so a log of takes that heard nothing says whether
+            // the input was a silent device (a virtual one, the headphone jack) or the engine.
+            AppLog.append("microphone: \(MicrophoneDevices.effectiveInputName(preferredUID: preferredMicrophoneUID) ?? "none"), \(Int(inputFormat.sampleRate)) Hz, \(inputFormat.channelCount) ch")
+            guard inputFormat.sampleRate > 0, inputFormat.channelCount > 0 else {
+                throw MicrophoneStartError.noInput
+            }
+            inputNode.removeTap(onBus: 0)
+            if let exception = AgenticOSCatchException({
+                inputNode.installTap(onBus: 0, bufferSize: 1024, format: inputFormat, block: tapBlock)
+            }) {
+                AppLog.append("microphone: the tap failed (\(exception.reason ?? exception.name.rawValue)), attempt \(attempt)")
+                guard attempt == 1 else { throw MicrophoneStartError.formatChanged }
+                audioEngine = AVAudioEngine()
+                MicrophoneDevices.apply(preferredUID: preferredMicrophoneUID, to: audioEngine)
+                try await Task.sleep(for: .milliseconds(600))
+                continue
+            }
+            break
+        }
+
         audioEngine.prepare()
-        try audioEngine.start()
+        var startError: Error?
+        if let exception = AgenticOSCatchException({
+            do { try audioEngine.start() } catch { startError = error }
+        }) {
+            AppLog.append("microphone: the engine failed to start (\(exception.reason ?? exception.name.rawValue))")
+            audioEngine.inputNode.removeTap(onBus: 0)
+            throw MicrophoneStartError.formatChanged
+        }
+        if let startError { throw startError }
+    }
+
+    enum MicrophoneStartError: LocalizedError {
+        case noInput, formatChanged
+        var errorDescription: String? {
+            switch self {
+            case .noInput: return "no microphone is available."
+            case .formatChanged: return "the microphone changed while it was opening. try again."
+            }
+        }
     }
 
     private func handleRecognitionError(_ error: Error) {

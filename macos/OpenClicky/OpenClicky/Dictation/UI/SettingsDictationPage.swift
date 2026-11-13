@@ -279,9 +279,16 @@ private struct MicrophoneTestRow: View {
             return
         }
         let testLevelBinding = $testLevel
-        input.installTap(onBus: 0, bufferSize: 1024, format: format, block: Self.makeLevelTap { level in
-            DispatchQueue.main.async { testLevelBinding.wrappedValue = level }
-        })
+        // a headset switching into call mode changes the format under the tap (ObjCExceptionCatcher.h)
+        if let exception = AgenticOSCatchException({
+            input.installTap(onBus: 0, bufferSize: 1024, format: format, block: Self.makeLevelTap { level in
+                DispatchQueue.main.async { testLevelBinding.wrappedValue = level }
+            })
+        }) {
+            testStartProblem = "\(microphoneName) changed while it was opening. Try the test again."
+            AppLog.append("microphone test: the tap failed (\(exception.reason ?? exception.name.rawValue))")
+            return
+        }
         engine.prepare()
         do {
             try engine.start()
