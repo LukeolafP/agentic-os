@@ -241,28 +241,56 @@ nonisolated final class AgenticOSHands: @unchecked Sendable {
 
     /// Flies the companion's pointer to a global point (top-left origin) and waits for it to land.
     private func fly(to point: CGPoint, label: String?) {
-        DispatchQueue.main.sync { MainActor.assumeIsolated {
+        // Main-actor work goes in as a Task, never as a main.sync block claiming isolation: a
+        // block entered that way while AppKit is mid-event left the concurrency runtime with a
+        // stale executor and a click on the island crashed in SwiftUI's hit test (13 Nov 2026).
+        // The network thread waits on a semaphore, which it may (it is a GCD thread, not a Task's).
+        onMain {
             guard let companion = self.companion else { return }
             let mainHeight = NSScreen.screens.first?.frame.height ?? 0
             let appKitPoint = CGPoint(x: point.x, y: mainHeight - point.y)
             let screen = NSScreen.screens.first(where: { $0.frame.contains(appKitPoint) }) ?? NSScreen.main
             companion.pointAt(screenLocation: appKitPoint, displayFrame: screen?.frame ?? .zero, label: label)
-        } }
+        }
         usleep(520_000)
     }
+
+    /// Runs `work` on the main actor as its own task and waits for it (two seconds at most, so a
+    /// busy main thread never wedges the hands' server).
+    private func onMain(_ work: @escaping @MainActor () -> Void) {
+        let done = DispatchSemaphore(value: 0)
+        Task { @MainActor in
+            work()
+            done.signal()
+        }
+        _ = done.wait(timeout: .now() + 2)
+    }
+
+    /// `work` on the main actor, returning its result; nil if the main thread did not get to it in two seconds.
+    private func onMain<T: Sendable>(_ work: @escaping @MainActor () -> T) -> T? {
+        let done = DispatchSemaphore(value: 0)
+        let box = ResultBox<T>()
+        Task { @MainActor in
+            box.value = work()
+            done.signal()
+        }
+        return done.wait(timeout: .now() + 2) == .success ? box.value : nil
+    }
+    private final class ResultBox<T>: @unchecked Sendable { var value: T? }
 
     private func setBusy(_ on: Bool, _ who: String) {
         busyWho = on ? who : ""
         if !on { outlineShown = false }
-        DispatchQueue.main.async { MainActor.assumeIsolated {
+        let hasTarget = target != nil
+        Task { @MainActor in
             self.companion?.agentActivityText = on ? "\(who) is using your Mac · Esc stops it" : nil
             if !on {
                 self.companion?.clearDetectedElementLocation()
                 AgenticOSOutline.shared.hide()
-            } else if self.target != nil {
+            } else if hasTarget {
                 AgenticOSOutline.shared.setLabel(who)
             }
-        } }
+        }
     }
 
     // MARK: background hands: the target window
@@ -292,7 +320,8 @@ nonisolated final class AgenticOSHands: @unchecked Sendable {
                 ($0.localizedName?.lowercased().hasPrefix(wanted) ?? false) && $0.activationPolicy == .regular
             }
         }
-        var app = DispatchQueue.main.sync { MainActor.assumeIsolated { running() } }
+        // NSWorkspace's list may be read from any thread.
+        var app = running()
         if app == nil {
             let open = Process()
             open.executableURL = URL(fileURLWithPath: "/usr/bin/open")
@@ -301,14 +330,16 @@ nonisolated final class AgenticOSHands: @unchecked Sendable {
             let deadline = Date().addingTimeInterval(8)
             while app == nil, Date() < deadline {
                 usleep(250_000)
-                app = DispatchQueue.main.sync { MainActor.assumeIsolated { running() } }
+                app = running()
             }
         }
         guard let app else { throw Failure("no app called \(name)") }
         let pid = app.processIdentifier
         let appName = app.localizedName ?? name
         // Chromium and Electron apps only build their web tree once asked.
-        DispatchQueue.main.sync { MainActor.assumeIsolated { ChromiumAccessibility.wake(app) } }
+        let isChromium = ChromiumAccessibility.isChromiumBased(bundleURL: app.bundleURL ?? URL(fileURLWithPath: "/"))
+        onMain { ChromiumAccessibility.wake(app) }
+        if isChromium { usleep(400_000) }
         let application = AXUIElementCreateApplication(pid)
         AXUIElementSetMessagingTimeout(application, 2)
         var window: AXUIElement?
@@ -354,15 +385,15 @@ nonisolated final class AgenticOSHands: @unchecked Sendable {
         elements = []
         targetLock.unlock()
         outlineShown = false
-        DispatchQueue.main.async { MainActor.assumeIsolated { AgenticOSOutline.shared.hide() } }
+        Task { @MainActor in AgenticOSOutline.shared.hide() }
         AppLog.append("screen agent: target cleared")
     }
 
     private func showOutline(_ frame: CGRect?) {
         let label = busyWho.isEmpty ? "Screen agent · \(target?.app ?? "")" : busyWho
-        DispatchQueue.main.async { MainActor.assumeIsolated {
+        Task { @MainActor in
             if let frame { AgenticOSOutline.shared.show(frame: frame, label: label) } else { AgenticOSOutline.shared.hide() }
-        } }
+        }
     }
 
     /// Every 100 ms, on its own queue: the window's frame goes to the outline; a window that is
@@ -392,7 +423,7 @@ nonisolated final class AgenticOSHands: @unchecked Sendable {
     }
 
     private func mark(_ point: CGPoint, label: String?) {
-        DispatchQueue.main.async { MainActor.assumeIsolated { AgenticOSOutline.shared.pulse(at: point, label: label) } }
+        Task { @MainActor in AgenticOSOutline.shared.pulse(at: point, label: label) }
     }
 
     // MARK: background hands: the window's tree

@@ -108,7 +108,8 @@ private final class OutlineView: NSView {
     func startAnimating() {
         guard animationTimer == nil else { return }
         animationTimer = Timer.scheduledTimer(withTimeInterval: 1 / 30, repeats: true) { [weak self] timer in
-            MainActor.assumeIsolated {
+            // The timer fires on the main run loop; the hop is stated as a task, not assumed.
+            Task { @MainActor in
                 guard let self else { timer.invalidate(); return }
                 self.pulses.removeAll { Date().timeIntervalSince($0.startedAt) > AgenticOSOutline.pulseSeconds }
                 self.needsDisplay = true
